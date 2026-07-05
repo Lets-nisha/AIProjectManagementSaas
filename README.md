@@ -1,16 +1,37 @@
-# React + Vite
+# 🚀 AI-Powered SaaS Project Management Tool
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+An AI-native project management platform (Jira + ChatGPT hybrid) built with **ReactJS** and **Tailwind CSS**. It takes project requirements in **Hinglish/Hindi/English** and automatically generates a complete Agile Sprint plan with a visual Kanban Board.
 
-Currently, two official plugins are available:
+---
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## ✨ Features
 
-## React Compiler
+- **🗣️ Hinglish Prompt Support:** Type project ideas naturally (e.g., *"Ek food delivery app banana hai 8 weeks me..."*).
+- **📋 Instant Kanban Board:** Automatically creates and populates tasks into *To-Do*, *In Progress*, and *Done* columns.
+- **📱 Responsive UI:** Fully responsive design with a sleek sliding sidebar for mobile devices.
+- **⚡ Modern Tech Stack:** Built using Vite + React for lightning-fast performance.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+---
 
-## Expanding the Oxlint configuration
+## 🛠️ Tech Stack
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and Oxlint's TypeScript related rules in your project.
+- **Frontend:** ReactJS (Functional Components & Hooks)
+- **Styling:** Tailwind CSS (Utility-first CSS framework)
+- **Icons:** Lucide React
+- **Build Tool:** Vite
+
+---
+
+## 🚀 Getting Started
+
+Follow these steps to run the project locally on your machine.
+
+### 1. Clone the Repository
+```bash
+git clone [ https://github.com/Lets-nisha/AIProjectManagementSaas.git ]
+
+Install Dependencies
+ npm install
+
+ Run the Development Server
+  npm run dev
