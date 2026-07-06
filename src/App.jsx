@@ -9,14 +9,13 @@ export default function App() {
 
   const handleAIQuery = (promptText) => {
     console.log("User Input for AI:", promptText);
-    alert(`AI ko aapka prompt mil gaya: "${promptText}"\nAbhi hum backend connect karenge to yahan automatic board banega!`);
+    alert(`your prompt here: "${promptText}"`);
   };
 
   return (
     <div className="flex h-screen bg-slate-50 font-sans text-slate-800 overflow-hidden relative">
 
 
-      {/* MOBILE OVERLAY (Jab sidebar khula ho to background dark karne ke liye) */}
       {isSidebarOpen && (
         <div
           className="fixed inset-0 bg-slate-900/40 z-20 md:hidden"
@@ -24,7 +23,6 @@ export default function App() {
         />
       )}
 
-      {/* 1. SIDEBAR (Responsive Update) */}
       <aside className={`
         fixed inset-y-0 left-0 z-30 w-64 bg-white border-r border-slate-200 flex flex-col justify-between p-4 transition-transform duration-300 ease-in-out
         ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}
@@ -91,7 +89,7 @@ export default function App() {
         {/* TOP HEADER (Responsive Hamburger Menu Added) */}
         <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-4 md:px-8 z-10">
           <div className="flex items-center gap-3">
-            {/* Hamburger Button (Sirf mobile pe dikhega) */}
+            {/* Hamburger Button  */}
             <button
               onClick={() => setIsSidebarOpen(true)}
               className="md:hidden p-2 rounded-lg text-slate-600 hover:bg-slate-100 focus:outline-none"
