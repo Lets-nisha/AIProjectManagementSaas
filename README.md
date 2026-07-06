@@ -35,5 +35,8 @@ git clone [ https://github.com/Lets-nisha/AIProjectManagementSaas.git ]
 Install Dependencies
  npm install
 
+ # Install the drag-and-drop package
+  npm install @hello-pangea/dnd
+
  Run the Development Server
   npm run dev
