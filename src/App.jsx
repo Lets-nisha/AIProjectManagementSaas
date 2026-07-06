@@ -15,6 +15,7 @@ export default function App() {
   return (
     <div className="flex h-screen bg-slate-50 font-sans text-slate-800 overflow-hidden relative">
 
+
       {/* MOBILE OVERLAY (Jab sidebar khula ho to background dark karne ke liye) */}
       {isSidebarOpen && (
         <div
