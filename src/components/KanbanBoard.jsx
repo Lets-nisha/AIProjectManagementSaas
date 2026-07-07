@@ -4,12 +4,14 @@ import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 const initialData = {
     todo: [
         { id: 'task-1', title: 'HTML Layout Banana' },
-        { id: 'task-2', title: 'CSS Tailwind Setup' }
+
     ],
     inProgress: [
         { id: 'task-3', title: 'React Learn Karna' }
     ],
-    done: []
+    done: [
+        { id: 'task-2', title: 'CSS Tailwind Setup' }
+    ]
 };
 
 const KanbanBoard = () => {
@@ -52,12 +54,10 @@ const KanbanBoard = () => {
     }
 
 
-    // if (!ready) return <div className="p-4 text-slate-500">Loading Kanban Board...</div>;
-
     return (
         <>
             <DragDropContext onDragEnd={handleDragEnd}>
-                <div className="flex gap-6 p-4">
+                <div className="flex gap-6 p-4 m-5 flex-wrap">
 
 
 
@@ -77,7 +77,7 @@ const KanbanBoard = () => {
                                                 ref={provided.innerRef}
                                                 {...provided.draggableProps}
                                                 {...provided.dragHandleProps}
-                                                className="bg-white p-3 rounded shadow mb-2 border border-slate-200 cursor-grab"
+                                                className="bg-white p-3 rounded shadow mb-2 border border-slate-400 cursor-grab"
                                             >
                                                 {task.title}
                                             </div>
@@ -96,7 +96,7 @@ const KanbanBoard = () => {
                             <div
                                 ref={provided.innerRef}
                                 {...provided.droppableProps}
-                                className="bg-slate-100 p-4 rounded-lg w-64 min-h-[300px]"
+                                className="bg-orange-100 p-4 rounded-lg w-64 min-h-[300px]"
                             >
                                 <h3 className="font-bold mb-4">In Progress</h3>
                                 {boardData.inProgress.map((task, index) => (
@@ -106,7 +106,7 @@ const KanbanBoard = () => {
                                                 ref={provided.innerRef}
                                                 {...provided.draggableProps}
                                                 {...provided.dragHandleProps}
-                                                className="bg-white p-3 rounded shadow mb-2 border border-slate-200 cursor-grab"
+                                                className="bg-orange p-3 rounded shadow mb-2 border border-slate-400 cursor-grab"
                                             >
                                                 {task.title}
                                             </div>
@@ -124,7 +124,7 @@ const KanbanBoard = () => {
                             <div
                                 ref={provided.innerRef}
                                 {...provided.droppableProps}
-                                className="bg-slate-100 p-4 rounded-lg w-64 min-h-[300px]"
+                                className="bg-green-100 p-4 rounded-lg w-64 min-h-[300px]"
                             >
                                 <h3 className="font-bold mb-4">Done</h3>
 
@@ -135,7 +135,7 @@ const KanbanBoard = () => {
                                                 ref={provided.innerRef}
                                                 {...provided.draggableProps}
                                                 {...provided.dragHandleProps}
-                                                className="bg-white p-3 rounded shadow mb-2 border border-slate-200 cursor-grab"
+                                                className="bg-green p-3 rounded shadow mb-2 border  border-slate-400 cursor-grab"
                                             >
                                                 {task.title}
                                             </div>

@@ -36,7 +36,7 @@ export default function PromptBox({ onGenerate }) {
             type="submit"
             className="bg-indigo-600 hover:bg-indigo-500 text-white font-medium text-sm px-5 py-2.5 rounded-lg shadow-lg shadow-indigo-600/20 transition-all flex items-center gap-2 active:scale-95"
           >
-            <Sparkles size={16} /> Generate Complete Project Plan (AI)
+            <Sparkles size={16} /> Generate Project Plan
           </button>
         </div>
       </form>
