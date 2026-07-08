@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
-import { LayoutDashboard, Users, Calendar, BarChart3, Settings, Menu, X, Sidebar } from 'lucide-react';
+import { LayoutDashboard, Users, Calendar, BarChart3, Settings, Menu, X, Sidebar, LogIn, } from 'lucide-react';
 import PromptBox from './components/PromptBox';
 import KanbanBoard from './components/KanbanBoard';
 import Header from './components/Header';
 import Setting from './pages/SettingsPage';
 import SidebarPage from './components/Sidebar';
 
-export default function App() {
+
+const App = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
@@ -26,6 +27,7 @@ export default function App() {
           onClick={() => setIsSidebarOpen(false)}
         />
       )}
+
 
 
       <SidebarPage
@@ -60,3 +62,5 @@ export default function App() {
     </div>
   );
 }
+
+export default App
