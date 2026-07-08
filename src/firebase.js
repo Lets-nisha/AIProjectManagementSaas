@@ -1,18 +1,17 @@
-// Import the functions you need from the SDKs you need
+// src/firebase.js
 import { initializeApp } from "firebase/app";
 import { getAnalytics } from "firebase/analytics";
 import { getFirestore } from "firebase/firestore";
 
 const firebaseConfig = {
-    apiKey: "AIzaSyDeiFhjjtvx2aUuhxy0JNNBktdQ9cYlhOk",
-    authDomain: "ai-project-management-97c0e.firebaseapp.com",
-    projectId: "ai-project-management-97c0e",
-    storageBucket: "ai-project-management-97c0e.firebasestorage.app",
-    messagingSenderId: "857244791086",
-    appId: "1:857244791086:web:35be9ad73cc1e865534abf",
-    measurementId: "G-P8EV6LD300"
+    apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+    authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+    projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+    storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+    messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+    appId: import.meta.env.VITE_FIREBASE_APP_ID,
+    measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
 };
-
 
 const app = initializeApp(firebaseConfig);
 const analytics = getAnalytics(app);
