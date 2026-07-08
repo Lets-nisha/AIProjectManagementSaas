@@ -6,15 +6,41 @@ import Header from './components/Header';
 import Setting from './pages/SettingsPage';
 import SidebarPage from './components/Sidebar';
 
+import { db } from './firebase';
+import { doc, setDoc } from 'firebase/firestore';
 
 const App = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
-  const handleAIQuery = (promptText) => {
+  const handleAIQuery = async (promptText) => {
     console.log("User Input for AI:", promptText);
-    alert(`your prompt here: "${promptText}"`);
+    if (!promptText.trim()) return;
+
+    const generatedTasks = {
+      todo: [
+        { id: `task-${Date.now()}-1`, title: `Setup: ${promptText.substring(0, 30)}...` },
+        { id: `task-${Date.now()}-2`, title: "Develop Core Features & UI Components" },
+        { id: `task-${Date.now()}-3`, title: "Testing, Bug Fixes & Deployment" }
+      ],
+      inProgress: [],
+      done: []
+    };
+
+    try {
+      const docRef = doc(db, "boards", "main-board");
+      await setDoc(docRef, generatedTasks);
+
+      console.log("New AI tasks successfully save  in Firebase! 🎉");
+
+      window.location.reload();
+
+    } catch (error) {
+      console.error(" Error to transfer data in Firebase :", error);
+      alert("Database not save .  check Rules !");
+    }
   };
+
 
   return (
     <div className="flex h-screen bg-slate-50 font-sans text-slate-800 overflow-hidden relative">

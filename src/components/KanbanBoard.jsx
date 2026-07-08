@@ -1,30 +1,64 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
+import { db } from "../firebase";
+import { doc, getDoc, setDoc } from "firebase/firestore";
 
-const initialData = {
-    todo: [
-        { id: 'task-1', title: 'HTML Layout Banana' },
 
-    ],
-    inProgress: [
-        { id: 'task-3', title: 'React Learn Karna' }
-    ],
-    done: [
-        { id: 'task-2', title: 'CSS Tailwind Setup' }
-    ]
-};
 
 const KanbanBoard = () => {
-    const [boardData, setBoardData] = useState(initialData);
+    const [boardData, setBoardData] = useState({ todo: [], inProgress: [], done: [] });
+    const [loading, setLoading] = useState(true);
 
-    const handleDragEnd = (result) => {
+    useEffect(() => {
+        const fetchBoardData = async () => {
+            try {
+                const docRef = doc(db, "boards", "main-board");
+                const docSnap = await getDoc(docRef);
+
+                if (docSnap.exists() && Object.keys(docSnap.data()).length > 0) {
+                    const data = docSnap.data();
+                    setBoardData({
+                        todo: data.todo || [],
+                        inProgress: data.inProgress || [],
+                        done: data.done || []
+                    });
+                } else {
+                    const initialSetup = {
+                        todo: [
+                            { id: "task-1", title: "Welcome to your Board!" },
+                            { id: "task-2", title: "Testing Firebase Connection" }
+                        ],
+                        inProgress: [],
+                        done: []
+                    };
+
+                    setBoardData(initialSetup);
+
+                    await setDoc(docRef, initialSetup);
+                    console.log("Initial dummy data created in Firebase!");
+                }
+            } catch (error) {
+                console.error(" error:", error);
+                setBoardData({
+                    todo: [{ id: "error-task", title: "Local Test Card (Firebase Offline)" }],
+                    inProgress: [],
+                    done: []
+                });
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchBoardData();
+    }, []);
+
+    const handleDragEnd = async (result) => {
         const { source, destination } = result;
-
         if (!destination) return;
+        if (source.droppableId === destination.droppableId && source.index === destination.index) return;
 
-        if (source.droppableId === destination.droppableId && source.index === destination.index) {
-            return;
-        }
+        let updatedData = { ...boardData };
+
 
         if (source.droppableId === destination.droppableId) {
             const currentColumn = Array.from(boardData[source.droppableId]);
@@ -32,34 +66,43 @@ const KanbanBoard = () => {
             const [removedTask] = currentColumn.splice(source.index, 1);
             currentColumn.splice(destination.index, 0, removedTask);
 
-            setBoardData({
+            updatedData = {
                 ...boardData,
                 [source.droppableId]: currentColumn
-            })
-            return;
+            };
+        } else {
+
+            const startColumn = Array.from(boardData[source.droppableId]);
+            const [movedTask] = startColumn.splice(source.index, 1);
+
+            const finishColumn = Array.from(boardData[destination.droppableId]);
+            finishColumn.splice(destination.index, 0, movedTask);
+
+            updatedData = {
+                ...boardData,
+                [source.droppableId]: startColumn,
+                [destination.droppableId]: finishColumn
+            };
         }
+        setBoardData(updatedData);
 
-        const startColumn = Array.from(boardData[source.droppableId]);
-        const [movedTask] = startColumn.splice(source.index, 1);
+        try {
+            await setDoc(doc(db, "boards", "main-board"), updatedData);
+            console.log("Save data properly in Firebase ! 🚀");
+        } catch (error) {
+            console.error("Error conn`t save data in Firebase:", error);
+        }
+    };
 
-        const finishColumn = Array.from(boardData[destination.droppableId]);
-        finishColumn.splice(destination.index, 0, movedTask);
-
-        setBoardData({
-            ...boardData,
-            [source.droppableId]: startColumn,
-            [destination.droppableId]: finishColumn
-        });
-
+    if (loading) {
+        return <div className="p-4 text-slate-500 text-center mt-12">Load board data...</div>;
     }
-
 
     return (
         <>
+
             <DragDropContext onDragEnd={handleDragEnd}>
                 <div className="flex gap-6 p-4 m-5 flex-wrap">
-
-
 
                     <Droppable droppableId="todo">
                         {(provided) => (
