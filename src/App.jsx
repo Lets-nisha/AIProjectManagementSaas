@@ -5,6 +5,7 @@ import KanbanBoard from './components/KanbanBoard';
 import Header from './components/Header';
 import Setting from './pages/SettingsPage';
 import SidebarPage from './components/Sidebar';
+import TeamPage from './components/TeamPage';
 
 import { db } from './firebase';
 import { doc, setDoc } from 'firebase/firestore';
@@ -78,7 +79,8 @@ const App = () => {
               <KanbanBoard />
             </div>
           )}
-          {activeTab !== 'dashboard' && (
+          {activeTab === 'team' && <TeamPage />}
+          {activeTab !== 'dashboard' && activeTab !== 'team' && (
             <div className="text-center text-slate-500 mt-12">This section is coming soon...</div>
           )}
         </div>

@@ -95,7 +95,7 @@ const KanbanBoard = () => {
     };
 
     if (loading) {
-        return <div className="p-4 text-slate-500 text-center mt-12">Load board data...</div>;
+        return <div className="p-4 text-slate-500 text-center mt-12">Loading...</div>;
     }
 
     return (
