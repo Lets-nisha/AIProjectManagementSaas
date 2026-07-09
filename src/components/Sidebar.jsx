@@ -34,6 +34,8 @@ const Sidebar = ({ activeTab, setActiveTab, isSidebarOpen, setIsSidebarOpen }) =
                         { id: 'boards', label: 'My Boards', icon: BarChart3 },
                         { id: 'team', label: 'Team', icon: Users },
                         { id: 'calendar', label: 'Calendar', icon: Calendar },
+
+
                     ].map((item) => {
                         const Icon = item.icon;
                         const isActive = activeTab === item.id;

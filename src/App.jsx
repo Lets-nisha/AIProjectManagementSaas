@@ -1,11 +1,10 @@
-import React, { useState } from 'react';
-import { LayoutDashboard, Users, Calendar, BarChart3, Settings, Menu, X, Sidebar, LogIn, } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
 import PromptBox from './components/PromptBox';
 import KanbanBoard from './components/KanbanBoard';
 import Header from './components/Header';
-import Setting from './pages/SettingsPage';
 import SidebarPage from './components/Sidebar';
 import TeamPage from './components/TeamPage';
+import MyBoard from "./components/MyBoard";
 
 import { db } from './firebase';
 import { doc, setDoc } from 'firebase/firestore';
@@ -80,7 +79,8 @@ const App = () => {
             </div>
           )}
           {activeTab === 'team' && <TeamPage />}
-          {activeTab !== 'dashboard' && activeTab !== 'team' && (
+          {activeTab === 'boards' && <MyBoard />}
+          {activeTab !== 'dashboard' && activeTab !== 'team' && activeTab !== 'boards' && (
             <div className="text-center text-slate-500 mt-12">This section is coming soon...</div>
           )}
         </div>
