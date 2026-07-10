@@ -62,7 +62,6 @@ const TeamPage = () => {
     return (
         <div className="max-w-5xl mx-auto animate-fade-in">
 
-            {/* Top Header Section */}
             <div className="flex justify-between items-center bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
                 <div>
                     <h2 className="text-xl font-bold text-slate-800">Project Team</h2>
@@ -76,7 +75,6 @@ const TeamPage = () => {
                 </button>
             </div>
 
-            {/* Team Grid List */}
             {members.length === 0 ? (
                 <div className="bg-white p-12 rounded-2xl text-center border text-slate-400">
                     Invite Member !
@@ -86,7 +84,6 @@ const TeamPage = () => {
                     {members.map((member) => (
                         <div key={member.id} className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm flex flex-col items-center text-center relative overflow-hidden group hover:shadow-md transition">
 
-                            {/* Delete Button  */}
                             <button
                                 onClick={() => handleDeleteMember(member.id)}
                                 className="absolute top-3 right-3 text-slate-300 hover:text-rose-500 transition opacity-0 group-hover:opacity-100"
@@ -114,7 +111,6 @@ const TeamPage = () => {
                 </div>
             )}
 
-            {/* FORM */}
             {showModal && (
                 <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center z-50 animate-fade-in">
                     <div className="bg-white p-6 rounded-2xl max-w-md w-full shadow-xl border m-4">

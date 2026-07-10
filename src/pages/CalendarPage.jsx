@@ -46,7 +46,6 @@ const CalendarPage = () => {
 
     return (
         <div className="p-2 bg-white font-sans text-[#172B4D]  ">
-            {/* JIRA CUSTOM STYLE INJECTION (COMPACT SIZE) */}
             <style>{`
                 .rbc-calendar { font-family: inherit; }
                 .rbc-event {
@@ -92,7 +91,6 @@ const CalendarPage = () => {
                 }
             `}</style>
 
-            {/* JIRA MINI HEADER */}
             <div className="flex p-2 justify-between items-center border-b border-[#DFE1E6] pb-2 mb-3">
                 <div >
                     <h1 className="text-base  font-semibold text-[#172B4D]">📅 Calendar View</h1>
@@ -102,7 +100,6 @@ const CalendarPage = () => {
                 </div>
             </div>
 
-            {/* FIXED COMPACT HEIGHT */}
             <div className="bg-white" style={{ height: "460px" }}>
                 <Calendar
                     localizer={localizer}
