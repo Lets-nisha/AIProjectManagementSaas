@@ -45,7 +45,7 @@ const CalendarPage = () => {
     }
 
     return (
-        <div className=" bg-white font-sans text-[#172B4D]  ">
+        <div className="p-2 bg-white font-sans text-[#172B4D]  ">
             {/* JIRA CUSTOM STYLE INJECTION (COMPACT SIZE) */}
             <style>{`
                 .rbc-calendar { font-family: inherit; }
@@ -54,7 +54,7 @@ const CalendarPage = () => {
                     color: #0747A6 !important;
                     border: none !important;
                     border-radius: 3px !important;
-                    padding: 1px 4px !important;
+                    // padding: 1px 4px !important;
                     font-size: 11px !important;
                     font-weight: 600 !important;
                 }
@@ -93,9 +93,9 @@ const CalendarPage = () => {
             `}</style>
 
             {/* JIRA MINI HEADER */}
-            <div className="flex justify-between items-center border-b border-[#DFE1E6] pb-2 mb-3">
-                <div>
-                    <h1 className="text-base font-semibold text-[#172B4D]">📅 Calendar View</h1>
+            <div className="flex p-2 justify-between items-center border-b border-[#DFE1E6] pb-2 mb-3">
+                <div >
+                    <h1 className="text-base  font-semibold text-[#172B4D]">📅 Calendar View</h1>
                 </div>
                 <div className="bg-[#F4F5F7] border border-[#DFE1E6] rounded px-2 py-0.5 text-[11px] font-medium text-[#42526E]">
                     <span>{events.length} Tasks</span>
