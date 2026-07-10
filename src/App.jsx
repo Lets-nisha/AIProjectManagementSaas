@@ -3,11 +3,12 @@ import PromptBox from './components/PromptBox';
 import KanbanBoard from './components/KanbanBoard';
 import Header from './components/Header';
 import SidebarPage from './components/Sidebar';
-import TeamPage from './components/TeamPage';
-import MyBoard from "./components/MyBoard";
+import TeamPage from './pages/TeamPage';
+import MyBoard from "./pages/MyBoard";
 
 import { db } from './firebase';
 import { doc, setDoc } from 'firebase/firestore';
+import CalendarPage from './pages/CalendarPage';
 
 const App = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -80,7 +81,8 @@ const App = () => {
           )}
           {activeTab === 'team' && <TeamPage />}
           {activeTab === 'boards' && <MyBoard />}
-          {activeTab !== 'dashboard' && activeTab !== 'team' && activeTab !== 'boards' && (
+          {activeTab === 'calendar' && <CalendarPage />}
+          {activeTab !== 'dashboard' && activeTab !== 'team' && activeTab !== 'boards' && activeTab !== 'calendar' && (
             <div className="text-center text-slate-500 mt-12">This section is coming soon...</div>
           )}
         </div>

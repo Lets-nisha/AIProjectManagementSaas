@@ -61,10 +61,11 @@ const KanbanBoard = () => {
     const handleAssignMember = async (columnId, taskId, memberName) => {
         const updatedColumn = boardData[columnId].map((task) => {
             if (task.id === taskId) {
-                return { ...task, assignedTo: memberName };
+                return { ...task, assignedTo: memberName || "" };
             }
             return task;
         });
+
         const updatedData = {
             ...boardData,
             [columnId]: updatedColumn
@@ -77,6 +78,29 @@ const KanbanBoard = () => {
             console.log("Member assigned successfully! 🚀");
         } catch (error) {
             console.error("Error updating assignment:", error);
+        }
+    };
+
+    const handleDateChange = async (columnId, taskId, newDate) => {
+        const updatedColumn = boardData[columnId].map((task) => {
+            if (task.id === taskId) {
+                return { ...task, dueDate: newDate || "" };
+            }
+            return task;
+        });
+
+        const updatedData = {
+            ...boardData,
+            [columnId]: updatedColumn
+        };
+
+        setBoardData(updatedData);
+
+        try {
+            await setDoc(doc(db, "boards", "main-board"), updatedData);
+            console.log("Due date updated in Firebase! 📅");
+        } catch (error) {
+            console.error("Error updating date:", error);
         }
     };
 
@@ -121,22 +145,44 @@ const KanbanBoard = () => {
             console.error("Error conn`t save data in Firebase:", error);
         }
     };
-    const renderAssigneeDropdown = (columnId, task) => (
-        <div className="mt-3 pt-2 border-t border-slate-200 flex items-center justify-between">
-            <span className="text-[10px] text-slate-500 font-semibold uppercase tracking-wider">Assignee:</span>
-            <select
-                value={task.assignedTo || ""}
-                onChange={(e) => handleAssignMember(columnId, task.id, e.target.value)}
-                className="text-xs bg-slate-50 border border-slate-300 rounded px-1 py-0.5 text-slate-700 focus:outline-none max-w-[120px] cursor-pointer"
-            >
-                <option value="">Unassigned</option>
-                {teamMembers.map((member) => (
-                    <option key={member.id} value={member.name}>
-                        {member.name}
-                    </option>
-                ))}
-            </select>
+    const renderTaskControls = (columnId, task) => (
+        <div className="mt-3 pt-2 border-t border-slate-200 space-y-2"  >
+
+            <div className="flex items-center justify-between">
+                <span className="text-[10px] text-slate-500 font-semibold uppercase tracking-wider">Assignee:</span>
+                <select
+                    value={task.assignedTo || ""}
+                    onChange={(e) => handleAssignMember(columnId, task.id, e.target.value)}
+                    className="text-xs bg-slate-50 border border-slate-300 rounded px-1 py-0.5 text-slate-700 focus:outline-none max-w-[120px] cursor-pointer"
+                >
+                    <option value="">Unassigned</option>
+                    {teamMembers.map((member) => (
+                        <option key={member.id} value={member.name}>
+                            {member.name}
+                        </option>
+                    ))}
+                </select>
+            </div>
+
+            {/* 📅 Due Date Input */}
+            <div className="flex items-center justify-between mt-1">
+                <span className="text-[10px] text-slate-500 font-semibold uppercase tracking-wider">Due Date:</span>
+                <input
+                    type="date"
+                    value={task.dueDate ? task.dueDate.substring(0, 10) : ""}
+                    onChange={(e) => {
+                        const selectedDate = e.target.value;
+                        if (selectedDate) {
+                            // 🟢 Exact same name call karna hai yahan
+                            handleDateChange(columnId, task.id, selectedDate);
+                        }
+                    }}
+                    className="text-xs bg-slate-50 border border-slate-300 rounded px-1 py-0.5 text-slate-700 focus:outline-none cursor-pointer"
+                />
+            </div>
+
         </div>
+
     );
 
     if (loading) {
@@ -168,7 +214,7 @@ const KanbanBoard = () => {
                                                 className="bg-white p-3 rounded shadow mb-2 border border-slate-400 cursor-grab flex flex-col justify-between"
                                             >
                                                 <div className="text-slate-800 font-medium">{task.title}</div>
-                                                {renderAssigneeDropdown("todo", task)}
+                                                {renderTaskControls("todo", task)}
                                             </div>
                                         )}
 
@@ -198,7 +244,7 @@ const KanbanBoard = () => {
                                                 className="bg-white p-3 rounded shadow mb-2 border border-slate-400 cursor-grab flex flex-col justify-between"
                                             >
                                                 <div className="text-slate-800 font-medium">{task.title}</div>
-                                                {renderAssigneeDropdown("inProgress", task)}
+                                                {renderTaskControls("inProgress", task)}
                                             </div>
                                         )}
                                     </Draggable>
@@ -228,7 +274,7 @@ const KanbanBoard = () => {
                                                 className="bg-green p-3 rounded shadow mb-2 border  border-slate-400 cursor-grab flex flex-col justify-between"
                                             >
                                                 <div className="text-slate-800 font-medium">{task.title}</div>
-                                                {renderAssigneeDropdown("done", task)}
+                                                {renderTaskControls("done", task)}
                                             </div>
                                         )}
                                     </Draggable>
