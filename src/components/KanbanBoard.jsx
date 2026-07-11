@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import { db } from "../firebase";
 import { doc, getDoc, setDoc, collection, onSnapshot } from "firebase/firestore";
@@ -9,6 +10,10 @@ const KanbanBoard = () => {
     const [boardData, setBoardData] = useState({ todo: [], inProgress: [], done: [] });
     const [loading, setLoading] = useState(true);
     const [teamMembers, setTeamMembers] = useState([]);
+    const [newComment, setNewComment] = useState("");
+
+    const [selectedTask, setSelectedTask] = useState(null);
+    const [selectedColumnId, setSelectedColumnId] = useState(null);
 
     useEffect(() => {
         const fetchBoardData = async () => {
@@ -66,10 +71,7 @@ const KanbanBoard = () => {
             return task;
         });
 
-        const updatedData = {
-            ...boardData,
-            [columnId]: updatedColumn
-        };
+        const updatedData = { ...boardData, [columnId]: updatedColumn };
 
         setBoardData(updatedData);
 
@@ -89,10 +91,7 @@ const KanbanBoard = () => {
             return task;
         });
 
-        const updatedData = {
-            ...boardData,
-            [columnId]: updatedColumn
-        };
+        const updatedData = { ...boardData, [columnId]: updatedColumn };
 
         setBoardData(updatedData);
 
@@ -101,6 +100,39 @@ const KanbanBoard = () => {
             console.log("Due date updated in Firebase! 📅");
         } catch (error) {
             console.error("Error updating date:", error);
+        }
+    };
+
+    const handleAddComment = async () => {
+        if (!newComment.trim() || !selectedTask || !selectedColumnId) return;
+
+        const commentObject = {
+            id: `comment-${Date.now()}`,
+            text: newComment,
+            by: "Current User",
+            createdAt: new Date().toLocaleDateString()
+        };
+
+        const updatedComments = [...(selectedTask.comments || []), commentObject];
+
+        const updatedColumn = boardData[selectedColumnId].map((task) => {
+            if (task.id === selectedTask.id) {
+                return { ...task, comments: updatedComments };
+            }
+            return task;
+        });
+
+        const updatedData = { ...boardData, [selectedColumnId]: updatedColumn };
+
+        setBoardData(updatedData);
+        setSelectedTask({ ...selectedTask, comments: updatedComments });
+        setNewComment("");
+
+        try {
+            await setDoc(doc(db, "boards", "main-board"), updatedData);
+            console.log("Comment added to Firebase!");
+        } catch (error) {
+            console.error("Error adding comment:", error);
         }
     };
 
@@ -146,7 +178,9 @@ const KanbanBoard = () => {
         }
     };
     const renderTaskControls = (columnId, task) => (
-        <div className="mt-3 pt-2 border-t border-slate-200 space-y-2"  >
+        <div className="mt-3 pt-2 border-t border-slate-200 space-y-2"
+            onClick={(e) => e.stopPropagation()}
+        >
 
             <div className="flex items-center justify-between">
                 <span className="text-[10px] text-slate-500 font-semibold uppercase tracking-wider">Assignee:</span>
@@ -164,7 +198,6 @@ const KanbanBoard = () => {
                 </select>
             </div>
 
-            {/* 📅 Due Date Input */}
             <div className="flex items-center justify-between mt-1">
                 <span className="text-[10px] text-slate-500 font-semibold uppercase tracking-wider">Due Date:</span>
                 <input
@@ -173,7 +206,6 @@ const KanbanBoard = () => {
                     onChange={(e) => {
                         const selectedDate = e.target.value;
                         if (selectedDate) {
-                            // 🟢 Exact same name call karna hai yahan
                             handleDateChange(columnId, task.id, selectedDate);
                         }
                     }}
@@ -193,7 +225,7 @@ const KanbanBoard = () => {
         <>
 
             <DragDropContext onDragEnd={handleDragEnd}>
-                <div className="flex gap-6 p-4 m-5 flex-wrap justify-center md:justify-start">
+                <div className="flex gap-6 p-4 flex-wrap justify-center md:justify-start">
 
                     <Droppable droppableId="todo">
                         {(provided) => (
@@ -211,6 +243,7 @@ const KanbanBoard = () => {
                                                 ref={provided.innerRef}
                                                 {...provided.draggableProps}
                                                 {...provided.dragHandleProps}
+                                                onClick={() => { setSelectedTask(task); setSelectedColumnId("todo"); }}
                                                 className="bg-white p-3 rounded shadow mb-2 border border-slate-400 cursor-grab flex flex-col justify-between"
                                             >
                                                 <div className="text-slate-800 font-medium">{task.title}</div>
@@ -241,6 +274,7 @@ const KanbanBoard = () => {
                                                 ref={provided.innerRef}
                                                 {...provided.draggableProps}
                                                 {...provided.dragHandleProps}
+                                                onClick={() => { setSelectedTask(task); setSelectedColumnId("inProgress"); }}
                                                 className="bg-white p-3 rounded shadow mb-2 border border-slate-400 cursor-grab flex flex-col justify-between"
                                             >
                                                 <div className="text-slate-800 font-medium">{task.title}</div>
@@ -271,6 +305,7 @@ const KanbanBoard = () => {
                                                 ref={provided.innerRef}
                                                 {...provided.draggableProps}
                                                 {...provided.dragHandleProps}
+                                                onClick={() => { setSelectedTask(task); setSelectedColumnId("done"); }}
                                                 className="bg-green p-3 rounded shadow mb-2 border  border-slate-400 cursor-grab flex flex-col justify-between"
                                             >
                                                 <div className="text-slate-800 font-medium">{task.title}</div>
@@ -287,6 +322,79 @@ const KanbanBoard = () => {
 
                 </div>
             </DragDropContext>
+
+
+            {selectedTask && (
+                <div
+                    className="fixed top-0 left-0 right-0 bottom-0 w-full h-full min-h-screen bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[999999] !mt-0 p-4"
+                    onClick={() => { setSelectedTask(null); setSelectedColumnId(null); }}
+                >
+                    <div
+                        className="bg-white rounded-xl shadow-2xl border border-slate-200 w-full max-w-lg overflow-hidden flex flex-col max-h-[85vh] !mt-0"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <div className="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+                            <h4 className="font-semibold text-slate-800 text-sm truncate max-w-[80%]">
+                                {selectedTask.title}
+                            </h4>
+                            <button
+                                onClick={() => { setSelectedTask(null); setSelectedColumnId(null); }}
+                                className="text-slate-400 hover:text-slate-600 font-bold text-sm px-2 py-1"
+                            >
+                                ✕
+                            </button>
+                        </div>
+
+                        <div className="p-4 overflow-y-auto space-y-4 flex-1">
+                            <div>
+                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Task Context</span>
+                                <p className="text-xs text-slate-600 bg-slate-50 p-2.5 rounded-lg border border-slate-100 leading-relaxed">
+                                    Assigned To: <strong className="text-slate-800">{selectedTask.assignedTo || "Unassigned"}</strong> <br />
+                                    Due Date: <strong className="text-slate-800">{selectedTask.dueDate || "No deadline"}</strong>
+                                </p>
+                            </div>
+
+                            <div>
+                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-2">
+                                    Activity Timeline ({selectedTask.comments?.length || 0})
+                                </span>
+                                <div className="space-y-2">
+                                    {selectedTask.comments && selectedTask.comments.length > 0 ? (
+                                        selectedTask.comments.map((comment) => (
+                                            <div key={comment.id} className="bg-slate-50/60 p-2.5 rounded-lg border border-slate-100 text-xs">
+                                                <div className="flex justify-between items-center mb-1">
+                                                    <span className="font-semibold text-slate-700">{comment.by}</span>
+                                                    <span className="text-[10px] text-slate-400">{comment.createdAt}</span>
+                                                </div>
+                                                <p className="text-slate-600">{comment.text}</p>
+                                            </div>
+                                        ))
+                                    ) : (
+                                        <p className="text-xs text-slate-400 italic">No activity yet. Type below to drop updates.</p>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="p-3 bg-slate-50 border-t border-slate-100 flex gap-2 items-center">
+                            <input
+                                type="text"
+                                value={newComment}
+                                onChange={(e) => setNewComment(e.target.value)}
+                                placeholder="Add a comment to this issue..."
+                                className="flex-1 text-xs border border-slate-300 rounded-lg px-3 py-2 bg-white focus:outline-none focus:border-indigo-500"
+                                onKeyDown={(e) => e.key === 'Enter' && handleAddComment()}
+                            />
+                            <button
+                                onClick={handleAddComment}
+                                className="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-medium px-4 py-2 rounded-lg transition-all"
+                            >
+                                Save
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
 
 
