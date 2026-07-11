@@ -156,7 +156,7 @@ const KanbanBoard = () => {
         }
     };
 
-    // ➕ NAYA TASK BOARD ME ADD KARNA
+
     const handleAddTask = async (columnId) => {
         if (!newTaskTitle.trim()) return;
 
@@ -179,6 +179,45 @@ const KanbanBoard = () => {
             await setDoc(doc(db, "boards", "main-board"), updatedData);
         } catch (error) {
             console.error("Error adding new task:", error);
+        }
+    };
+
+    const handleDeleteTask = async (colId, taskId) => {
+        const confirmDelete = window.confirm("Are you sure?");
+        if (!confirmDelete) return;
+
+        const updatedColumn = boardData[colId].filter((task) => task.id !== taskId);
+        const updatedData = { ...boardData, [colId]: updatedColumn };
+
+        setBoardData(updatedData);
+
+        try {
+            await setDoc(doc(db, "boards", "main-board"), updatedData);
+        } catch (error) {
+            console.error("Error deleting task:", error);
+        }
+    };
+
+    const handleEditTaskTitle = async (colId, taskId) => {
+        const currentTask = boardData[colId].find(t => t.id === taskId);
+        const newTitle = window.prompt("Edit Name:", currentTask?.title);
+
+        if (!newTitle || !newTitle.trim()) return;
+
+        const updatedColumn = boardData[colId].map((task) => {
+            if (task.id === taskId) {
+                return { ...task, title: newTitle.trim() };
+            }
+            return task;
+        });
+
+        const updatedData = { ...boardData, [colId]: updatedColumn };
+        setBoardData(updatedData);
+
+        try {
+            await setDoc(doc(db, "boards", "main-board"), updatedData);
+        } catch (error) {
+            console.error("Error updating task title:", error);
         }
     };
 
@@ -373,10 +412,32 @@ const KanbanBoard = () => {
                                                 ref={provided.innerRef}
                                                 {...provided.draggableProps}
                                                 {...provided.dragHandleProps}
-                                                onClick={() => { setSelectedTask(task); setSelectedColumnId("todo"); }}
+                                                onClick={() => {
+                                                    setSelectedTask(task); setSelectedColumnId("todo");
+
+                                                }}
                                                 className="bg-white p-3 rounded shadow mb-2 border border-slate-400 cursor-grab flex flex-col justify-between"
                                             >
-                                                <div className="text-slate-800 font-medium">{task.title}</div>
+                                                <div className="flex justify-between items-start gap-2">
+                                                    <div className="text-slate-800 font-medium text-xs flex-1">{task.title}</div>
+                                                    <div className="flex gap-1.5 opacity-60 hover:opacity-100" onClick={(e) => e.stopPropagation()}>
+                                                        <button
+                                                            onClick={() => handleEditTaskTitle("todo", task.id)}
+                                                            className="text-slate-400 hover:text-indigo-600 text-[11px]"
+                                                            title="Edit Title"
+                                                        >
+                                                            ✏️
+                                                        </button>
+                                                        <button
+                                                            onClick={() => handleDeleteTask("todo", task.id)}
+                                                            className="text-slate-400 hover:text-rose-600 text-[11px]"
+                                                            title="Delete Task"
+                                                        >
+                                                            🗑️
+                                                        </button>
+                                                    </div>
+                                                </div>
+
                                                 {renderTaskControls("todo", task)}
                                             </div>
                                         )}
@@ -408,7 +469,25 @@ const KanbanBoard = () => {
                                                 onClick={() => { setSelectedTask(task); setSelectedColumnId("inProgress"); }}
                                                 className="bg-white p-3 rounded shadow mb-2 border border-slate-400 cursor-grab flex flex-col justify-between"
                                             >
-                                                <div className="text-slate-800 font-medium">{task.title}</div>
+                                                <div className="flex justify-between items-start gap-2">
+                                                    <div className="text-slate-800 font-medium text-xs flex-1">{task.title}</div>
+                                                    <div className="flex gap-1.5 opacity-60 hover:opacity-100" onClick={(e) => e.stopPropagation()}>
+                                                        <button
+                                                            onClick={() => handleEditTaskTitle("inProgress", task.id)}
+                                                            className="text-slate-400 hover:text-indigo-600 text-[11px]"
+                                                            title="Edit Title"
+                                                        >
+                                                            ✏️
+                                                        </button>
+                                                        <button
+                                                            onClick={() => handleDeleteTask("inProgress", task.id)}
+                                                            className="text-slate-400 hover:text-rose-600 text-[11px]"
+                                                            title="Delete Task"
+                                                        >
+                                                            🗑️
+                                                        </button>
+                                                    </div>
+                                                </div>
                                                 {renderTaskControls("inProgress", task)}
                                             </div>
                                         )}
@@ -441,7 +520,25 @@ const KanbanBoard = () => {
                                                 onClick={() => { setSelectedTask(task); setSelectedColumnId("done"); }}
                                                 className="bg-green p-3 rounded shadow mb-2 border  border-slate-400 cursor-grab flex flex-col justify-between"
                                             >
-                                                <div className="text-slate-800 font-medium">{task.title}</div>
+                                                <div className="flex justify-between items-start gap-2">
+                                                    <div className="text-slate-800 font-medium text-xs flex-1">{task.title}</div>
+                                                    <div className="flex gap-1.5 opacity-60 hover:opacity-100" onClick={(e) => e.stopPropagation()}>
+                                                        <button
+                                                            onClick={() => handleEditTaskTitle("done", task.id)}
+                                                            className="text-slate-400 hover:text-indigo-600 text-[11px]"
+                                                            title="Edit Title"
+                                                        >
+                                                            ✏️
+                                                        </button>
+                                                        <button
+                                                            onClick={() => handleDeleteTask("done", task.id)}
+                                                            className="text-slate-400 hover:text-rose-600 text-[11px]"
+                                                            title="Delete Task"
+                                                        >
+                                                            🗑️
+                                                        </button>
+                                                    </div>
+                                                </div> <div className="text-slate-800 font-medium">{task.title}</div>
                                                 {renderTaskControls("done", task)}
                                             </div>
                                         )}
