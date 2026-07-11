@@ -15,6 +15,12 @@ const KanbanBoard = () => {
     const [selectedTask, setSelectedTask] = useState(null);
     const [selectedColumnId, setSelectedColumnId] = useState(null);
 
+    const [editingCommentId, setEditingCommentId] = useState(null);
+    const [editingCommentText, setEditingCommentText] = useState("");
+
+    const [activeInputColumn, setActiveInputColumn] = useState(null);
+    const [newTaskTitle, setNewTaskTitle] = useState("");
+
     useEffect(() => {
         const fetchBoardData = async () => {
             try {
@@ -63,6 +69,160 @@ const KanbanBoard = () => {
         return () => unsubscribeTeam();
     }, []);
 
+    const handleAddComment = async () => {
+        if (!newComment.trim() || !selectedTask || !selectedColumnId) return;
+
+        const commentObject = {
+            id: `comment-${Date.now()}`,
+            text: newComment.trim(),
+            by: "Current User",
+            createdAt: new Date().toLocaleDateString()
+        };
+
+        const updatedComments = [...(selectedTask.comments || []), commentObject];
+        const updatedColumn = boardData[selectedColumnId].map((task) => {
+            if (task.id === selectedTask.id) {
+                return { ...task, comments: updatedComments };
+            }
+            return task;
+        });
+
+        const updatedData = { ...boardData, [selectedColumnId]: updatedColumn };
+
+        setBoardData(updatedData);
+        setSelectedTask({ ...selectedTask, comments: updatedComments });
+        setNewComment("");
+
+        try {
+            await setDoc(doc(db, "boards", "main-board"), updatedData);
+        } catch (error) {
+            console.error(error);
+        }
+    };
+
+    const handleUpdateComment = async (commentId) => {
+        if (!editingCommentText.trim() || !selectedTask || !selectedColumnId) return;
+
+        const updatedComments = selectedTask.comments.map((comment) => {
+            if (comment.id === commentId) {
+                return { ...comment, text: editingCommentText.trim() };
+            }
+            return comment;
+        });
+
+        const updatedColumn = boardData[selectedColumnId].map((task) => {
+            if (task.id === selectedTask.id) {
+                return { ...task, comments: updatedComments };
+            }
+            return task;
+        });
+
+        const updatedData = { ...boardData, [selectedColumnId]: updatedColumn };
+        setBoardData(updatedData);
+        setSelectedTask({ ...selectedTask, comments: updatedComments });
+        setEditingCommentId(null);
+        setEditingCommentText("");
+
+        try {
+            await setDoc(doc(db, "boards", "main-board"), updatedData);
+        } catch (error) {
+            console.error("Error updating comment:", error);
+        }
+    };
+
+    const handleDeleteComment = async (commentId) => {
+        if (!selectedTask || !selectedColumnId) return;
+
+        const confirmDelete = window.confirm("Are you sure delete ths comment?");
+        if (!confirmDelete) return;
+
+        const updatedComments = selectedTask.comments.filter((comment) => comment.id !== commentId);
+
+        const updatedColumn = boardData[selectedColumnId].map((task) => {
+            if (task.id === selectedTask.id) {
+                return { ...task, comments: updatedComments };
+            }
+            return task;
+        });
+
+        const updatedData = { ...boardData, [selectedColumnId]: updatedColumn };
+        setBoardData(updatedData);
+        setSelectedTask({ ...selectedTask, comments: updatedComments });
+
+        try {
+            await setDoc(doc(db, "boards", "main-board"), updatedData);
+        } catch (error) {
+            console.error("Error deleting comment:", error);
+        }
+    };
+
+    // ➕ NAYA TASK BOARD ME ADD KARNA
+    const handleAddTask = async (columnId) => {
+        if (!newTaskTitle.trim()) return;
+
+        const newTask = {
+            id: `task-${Date.now()}`, // Drag and drop ke liye unique ID
+            title: newTaskTitle.trim(),
+            assignedTo: "",
+            dueDate: "",
+            comments: []
+        };
+
+        const updatedColumn = [...boardData[columnId], newTask];
+        const updatedData = { ...boardData, [columnId]: updatedColumn };
+
+        setBoardData(updatedData);
+        setNewTaskTitle("");
+        setActiveInputColumn(null); // Input field close karne ke liye
+
+        try {
+            await setDoc(doc(db, "boards", "main-board"), updatedData);
+        } catch (error) {
+            console.error("Error adding new task:", error);
+        }
+    };
+
+    const renderNewTaskInput = (columnId) => {
+        if (activeInputColumn === columnId) {
+            return (
+                <div className="mt-3 bg-white p-3 rounded shadow border border-indigo-300 space-y-2">
+                    <input
+                        type="text"
+                        value={newTaskTitle}
+                        onChange={(e) => setNewTaskTitle(e.target.value)}
+                        placeholder="What needs to be done?"
+                        className="w-full text-xs border border-slate-300 rounded px-2 py-1.5 focus:outline-none focus:border-indigo-500"
+                        onKeyDown={(e) => e.key === 'Enter' && handleAddTask(columnId)}
+                        autoFocus
+                    />
+                    <div className="flex gap-2 justify-end">
+                        <button
+                            onClick={() => { setActiveInputColumn(null); setNewTaskTitle(""); }}
+                            className="text-[11px] text-slate-500 hover:text-slate-700 px-2 py-1"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            onClick={() => handleAddTask(columnId)}
+                            className="bg-indigo-600 hover:bg-indigo-700 text-white text-[11px] font-medium px-3 py-1 rounded shadow"
+                        >
+                            Add
+                        </button>
+                    </div>
+                </div>
+            );
+        }
+
+        return (
+            <button
+                onClick={() => setActiveInputColumn(columnId)}
+                className="mt-3 w-full border border-dashed border-slate-300 hover:border-indigo-400 text-slate-500 hover:text-indigo-600 bg-slate-50/50 hover:bg-white text-xs font-medium py-2 rounded-lg transition-all flex items-center justify-center gap-1"
+            >
+                ➕ Add Task
+            </button>
+        );
+    };
+
     const handleAssignMember = async (columnId, taskId, memberName) => {
         const updatedColumn = boardData[columnId].map((task) => {
             if (task.id === taskId) {
@@ -103,38 +263,7 @@ const KanbanBoard = () => {
         }
     };
 
-    const handleAddComment = async () => {
-        if (!newComment.trim() || !selectedTask || !selectedColumnId) return;
 
-        const commentObject = {
-            id: `comment-${Date.now()}`,
-            text: newComment,
-            by: "Current User",
-            createdAt: new Date().toLocaleDateString()
-        };
-
-        const updatedComments = [...(selectedTask.comments || []), commentObject];
-
-        const updatedColumn = boardData[selectedColumnId].map((task) => {
-            if (task.id === selectedTask.id) {
-                return { ...task, comments: updatedComments };
-            }
-            return task;
-        });
-
-        const updatedData = { ...boardData, [selectedColumnId]: updatedColumn };
-
-        setBoardData(updatedData);
-        setSelectedTask({ ...selectedTask, comments: updatedComments });
-        setNewComment("");
-
-        try {
-            await setDoc(doc(db, "boards", "main-board"), updatedData);
-            console.log("Comment added to Firebase!");
-        } catch (error) {
-            console.error("Error adding comment:", error);
-        }
-    };
 
     const handleDragEnd = async (result) => {
         const { source, destination } = result;
@@ -227,6 +356,7 @@ const KanbanBoard = () => {
             <DragDropContext onDragEnd={handleDragEnd}>
                 <div className="flex gap-6 p-4 flex-wrap justify-center md:justify-start">
 
+                    {renderNewTaskInput("todo")}
                     <Droppable droppableId="todo">
                         {(provided) => (
                             <div
@@ -258,6 +388,7 @@ const KanbanBoard = () => {
                             </div>
                         )}
                     </Droppable>
+                    {renderNewTaskInput("inProgress")}
 
                     <Droppable droppableId="inProgress">
                         {(provided) => (
@@ -288,6 +419,8 @@ const KanbanBoard = () => {
                             </div>
                         )}
                     </Droppable>
+                    {renderNewTaskInput("done")}
+
 
                     <Droppable droppableId="done">
                         {(provided) => (
@@ -364,9 +497,48 @@ const KanbanBoard = () => {
                                             <div key={comment.id} className="bg-slate-50/60 p-2.5 rounded-lg border border-slate-100 text-xs">
                                                 <div className="flex justify-between items-center mb-1">
                                                     <span className="font-semibold text-slate-700">{comment.by}</span>
-                                                    <span className="text-[10px] text-slate-400">{comment.createdAt}</span>
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="text-[10px] text-slate-400">{comment.createdAt}</span>
+                                                        <button
+                                                            onClick={() => { setEditingCommentId(comment.id); setEditingCommentText(comment.text); }}
+                                                            className="text-slate-400 hover:text-indigo-600 text-[11px]"
+                                                            title="Edit Comment"
+                                                        >
+                                                            ✏️
+                                                        </button>
+                                                        <button
+                                                            onClick={() => handleDeleteComment(comment.id)}
+                                                            className="text-slate-400 hover:text-rose-600 text-[11px]"
+                                                            title="Delete Comment"
+                                                        >
+                                                            🗑️
+                                                        </button>
+                                                    </div>
                                                 </div>
-                                                <p className="text-slate-600">{comment.text}</p>
+                                                {editingCommentId === comment.id ? (
+                                                    <div className="mt-1 flex gap-2 items-center">
+                                                        <input
+                                                            type="text"
+                                                            value={editingCommentText}
+                                                            onChange={(e) => setEditingCommentText(e.target.value)}
+                                                            className="flex-1 text-xs border border-slate-300 rounded px-2 py-1 bg-white focus:outline-none focus:border-indigo-500"
+                                                        />
+                                                        <button
+                                                            onClick={() => handleUpdateComment(comment.id)}
+                                                            className="bg-indigo-600 text-white text-[10px] px-2 py-1 rounded font-medium"
+                                                        >
+                                                            Update
+                                                        </button>
+                                                        <button
+                                                            onClick={() => { setEditingCommentId(null); setEditingCommentText(""); }}
+                                                            className="text-slate-500 text-[10px] px-1"
+                                                        >
+                                                            Cancel
+                                                        </button>
+                                                    </div>
+                                                ) : (
+                                                    <p className="text-slate-600 whitespace-pre-wrap">{comment.text}</p>
+                                                )}
                                             </div>
                                         ))
                                     ) : (
