@@ -3,7 +3,8 @@ import React, { useState, useEffect } from "react";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import { db } from "../firebase";
 import { doc, getDoc, setDoc, collection, onSnapshot } from "firebase/firestore";
-
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 
 const KanbanBoard = () => {
@@ -92,6 +93,7 @@ const KanbanBoard = () => {
         setBoardData(updatedData);
         setSelectedTask({ ...selectedTask, comments: updatedComments });
         setNewComment("");
+        toast.success("Add New Comment");
 
         try {
             await setDoc(doc(db, "boards", "main-board"), updatedData);
@@ -122,6 +124,7 @@ const KanbanBoard = () => {
         setSelectedTask({ ...selectedTask, comments: updatedComments });
         setEditingCommentId(null);
         setEditingCommentText("");
+        toast.info("Edit comment")
 
         try {
             await setDoc(doc(db, "boards", "main-board"), updatedData);
@@ -148,7 +151,7 @@ const KanbanBoard = () => {
         const updatedData = { ...boardData, [selectedColumnId]: updatedColumn };
         setBoardData(updatedData);
         setSelectedTask({ ...selectedTask, comments: updatedComments });
-
+        toast.error("Delete comment");
         try {
             await setDoc(doc(db, "boards", "main-board"), updatedData);
         } catch (error) {
@@ -173,7 +176,9 @@ const KanbanBoard = () => {
 
         setBoardData(updatedData);
         setNewTaskTitle("");
-        setActiveInputColumn(null); // Input field close karne ke liye
+        setActiveInputColumn(null);
+        toast.success("🚀 Add New Task!");
+
 
         try {
             await setDoc(doc(db, "boards", "main-board"), updatedData);
@@ -190,6 +195,7 @@ const KanbanBoard = () => {
         const updatedData = { ...boardData, [colId]: updatedColumn };
 
         setBoardData(updatedData);
+        toast.error("🗑️  delete Task!");
 
         try {
             await setDoc(doc(db, "boards", "main-board"), updatedData);
@@ -213,6 +219,7 @@ const KanbanBoard = () => {
 
         const updatedData = { ...boardData, [colId]: updatedColumn };
         setBoardData(updatedData);
+        toast.info("✏️ change Task Name!");
 
         try {
             await setDoc(doc(db, "boards", "main-board"), updatedData);
@@ -662,6 +669,7 @@ const KanbanBoard = () => {
                             </button>
                         </div>
                     </div>
+                    <ToastContainer position="bottom-right" autoClose={3000} theme="light" />
                 </div>
             )}
 
