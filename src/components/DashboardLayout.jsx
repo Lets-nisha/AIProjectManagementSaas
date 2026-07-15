@@ -3,11 +3,11 @@ import PromptBox from './PromptBox';
 import KanbanBoard from './KanbanBoard';
 import Header from './Header';
 import SidebarPage from './Sidebar';
-import TeamPage from '../pages/TeamPage'; // Path check kar lein
+import TeamPage from '../pages/TeamPage';
 import MyBoard from "../pages/MyBoard";
 import CalendarPage from '../pages/CalendarPage';
 
-import { db } from '../firebase'; // Path check kar lein
+import { db } from '../firebase';
 import { doc, setDoc } from 'firebase/firestore';
 
 const DashboardLayout = () => {
@@ -41,7 +41,6 @@ const DashboardLayout = () => {
 
     return (
         <div className="flex h-screen bg-slate-50 font-sans text-slate-800 overflow-hidden relative">
-            {/* MOBILE OVERLAY */}
             {isSidebarOpen && (
                 <div
                     className="fixed inset-0 bg-slate-900/40 z-20 md:hidden"
@@ -49,7 +48,6 @@ const DashboardLayout = () => {
                 />
             )}
 
-            {/* Sidebar */}
             <SidebarPage
                 activeTab={activeTab}
                 setActiveTab={setActiveTab}
@@ -57,7 +55,6 @@ const DashboardLayout = () => {
                 setIsSidebarOpen={setIsSidebarOpen}
             />
 
-            {/* Main Content Area */}
             <main className="flex-1 flex flex-col h-full overflow-hidden w-full">
                 <Header setIsSidebarOpen={setIsSidebarOpen} activeTab={activeTab} />
 
@@ -81,4 +78,4 @@ const DashboardLayout = () => {
     );
 };
 
-export default DashboardLayout; // 👈 Ise export karna zaroori hai
+export default DashboardLayout;  

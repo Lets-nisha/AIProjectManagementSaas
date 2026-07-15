@@ -70,6 +70,32 @@ const KanbanBoard = () => {
         return () => unsubscribeTeam();
     }, []);
 
+    // const handleBacklogGenerated = async (aiTasks) => {
+    //     try {
+    //         const formattedTasks = aiTasks.map((task) => ({
+    //             id: `task-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`, // Unique secure ID
+    //             title: task.title,
+    //             assignedTo: task.assignee || "",
+    //             dueDate: "",
+    //             comments: []
+    //         }));
+
+    //         const updatedData = {
+    //             ...boardData,
+    //             todo: [...boardData.todo, ...formattedTasks], // Append generated tasks into current Todo
+    //         };
+
+    //         setBoardData(updatedData);
+
+    //         await setDoc(doc(db, "boards", "main-board"), updatedData);
+
+    //         toast.success("✨ AI Generated Project Plan successfully loaded on your Board!");
+    //     } catch (error) {
+    //         console.error("Error setting AI generated backlog to Firebase: ", error);
+    //         toast.error("Failed to sync AI backlog on cloud DB.");
+    //     }
+    // };
+
     const handleAddComment = async () => {
         if (!newComment.trim() || !selectedTask || !selectedColumnId) return;
 
@@ -164,7 +190,7 @@ const KanbanBoard = () => {
         if (!newTaskTitle.trim()) return;
 
         const newTask = {
-            id: `task-${Date.now()}`, // Drag and drop ke liye unique ID
+            id: `task-${Date.now()}`,
             title: newTaskTitle.trim(),
             assignedTo: "",
             dueDate: "",
@@ -398,6 +424,7 @@ const KanbanBoard = () => {
 
     return (
         <>
+
 
             <DragDropContext onDragEnd={handleDragEnd}>
                 <div className="flex gap-6 p-4 flex-wrap justify-center md:justify-start">
