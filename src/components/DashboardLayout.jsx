@@ -1,14 +1,16 @@
 import React, { useState } from 'react';
-import PromptBox from './PromptBox';
-import KanbanBoard from './KanbanBoard';
-import Header from './Header';
-import SidebarPage from './Sidebar';
+import PromptBox from '../components/PromptBox';
+import KanbanBoard from '../components/KanbanBoard';
+import Header from '../components/Header';
+import SidebarPage from '../components/Sidebar';
 import TeamPage from '../pages/TeamPage';
 import MyBoard from "../pages/MyBoard";
 import CalendarPage from '../pages/CalendarPage';
 
 import { db } from '../firebase';
 import { doc, setDoc } from 'firebase/firestore';
+import { generateProjectBacklog } from '../utils/gemini';
+import { toast } from 'react-toastify';
 
 const DashboardLayout = () => {
     const [activeTab, setActiveTab] = useState('dashboard');
@@ -16,26 +18,46 @@ const DashboardLayout = () => {
 
     const handleAIQuery = async (promptText) => {
         console.log("User Input for AI:", promptText);
-        if (!promptText.trim()) return;
-
-        const generatedTasks = {
-            todo: [
-                { id: `task-${Date.now()}-1`, title: `Setup: ${promptText.substring(0, 30)}...` },
-                { id: `task-${Date.now()}-2`, title: "Develop Core Features & UI Components" },
-                { id: `task-${Date.now()}-3`, title: "Testing, Bug Fixes & Deployment" }
-            ],
-            inProgress: [],
-            done: []
-        };
+        if (!promptText || !promptText.trim()) return;
 
         try {
+            const aiTasks = await generateProjectBacklog(promptText);
+
+            const todoList = [];
+            const inProgressList = [];
+
+            aiTasks.forEach((task, index) => {
+                const formattedTask = {
+                    id: task.code || `task-${Date.now()}-${index}`,
+                    title: `${task.title} [${task.priority.toUpperCase()}]${task.assignee ? `(${task.assignee})` : ''}`
+                };
+
+                if (task.status === 'progress' || task.status === 'inProgress') {
+                    inProgressList.push(formattedTask);
+                } else {
+                    todoList.push(formattedTask);
+                }
+            });
+
+            const finalBacklog = {
+                todo: todoList,
+                inProgress: inProgressList,
+                done: []
+            };
+
             const docRef = doc(db, "boards", "main-board");
-            await setDoc(docRef, generatedTasks);
-            console.log("New tasks successfully saved in Firebase! 🎉");
-            window.location.reload();
+            await setDoc(docRef, finalBacklog);
+
+            console.log("Real AI tasks successfully saved in Firebase! 🎉");
+            toast.success("✨ AI Project Plan Loaded!");
+
+            setTimeout(() => {
+                window.location.reload();
+            }, 1000);
+
         } catch (error) {
-            console.error("Error saving data in Firebase:", error);
-            alert("Database not saved. Check Rules!");
+            console.error("Error generating/saving AI Backlog:", error);
+            toast.error("Failed to generate or save tasks.");
         }
     };
 
@@ -78,4 +100,4 @@ const DashboardLayout = () => {
     );
 };
 
-export default DashboardLayout;  
+export default DashboardLayout;
