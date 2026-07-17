@@ -12,12 +12,12 @@ const PromptBox = ({ onGenerate }) => {
     setLoading(true);
     try {
       await onGenerate(prompt.trim());
-      setPrompt('');
     } catch (error) {
       console.error("AI execution failed:", error);
     } finally {
       setLoading(false);
     }
+    setPrompt('');
   };
 
   return (
