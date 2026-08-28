@@ -4,6 +4,7 @@ import moment from "moment";
 import "react-big-calendar/lib/css/react-big-calendar.css";
 import { db } from "../firebase";
 import { doc, onSnapshot } from "firebase/firestore";
+import { Calendar as CalendarIcon, Loader2 } from "lucide-react";
 
 const localizer = momentLocalizer(moment);
 
@@ -37,70 +38,118 @@ const CalendarPage = () => {
 
     if (loading) {
         return (
-            <div className="flex flex-col items-center justify-center h-[300px] bg-[#FAFBFC]">
-                <div className="animate-spin rounded-full h-5 w-5 border-2 border-[#0052CC] border-t-transparent mb-2"></div>
-                <p className="text-xs text-[#5E6C84]">Loading...</p>
+            <div className="flex flex-col items-center justify-center min-h-[300px] text-slate-400 gap-3">
+                <Loader2 className="w-8 h-8 animate-spin text-indigo-500" />
+                <p className="text-sm font-medium">Loading Scheduled Tasks...</p>
             </div>
         );
     }
 
     return (
-        <div className="p-2 bg-white font-sans text-[#172B4D]  ">
+        <div className="max-w-6xl mx-auto space-y-6 text-white p-2 sm:p-4">
             <style>{`
-                .rbc-calendar { font-family: inherit; }
-                .rbc-event {
-                    background-color: #DEEBFF !important;
-                    color: #0747A6 !important;
-                    border: none !important;
-                    border-radius: 3px !important;
-                    // padding: 1px 4px !important;
-                    font-size: 11px !important;
-                    font-weight: 600 !important;
+                /* Dark Theme Styles for React Big Calendar */
+                .rbc-calendar { 
+                    font-family: inherit; 
+                    color: #cbd5e1;
                 }
-                .rbc-today { background-color: #EAE6FF !important; }
+                .rbc-month-view, .rbc-time-view {
+                    border: 1px solid rgba(51, 65, 85, 0.8) !important;
+                    border-radius: 12px;
+                    background: rgba(15, 23, 42, 0.6);
+                    overflow: hidden;
+                }
                 .rbc-header {
-                    padding: 6px 0 !important;
-                    font-weight: 600 !important;
-                    color: #5E6C84 !important;
-                    font-size: 11px !important;
-                }
-                /* Compact rows */
-                .rbc-month-row { min-height: 70px !important; } 
-                .rbc-month-view {
-                    border: 1px solid #DFE1E6 !important;
-                    border-radius: 4px !important;
-                    background: #FAFBFC;
-                }
-                .rbc-day-bg { background: #FFFFFF; }
-                .rbc-toolbar button {
-                    color: #42526E !important;
-                    border: 1px solid #DFE1E6 !important;
-                    background: #F4F5F7 !important;
-                    border-radius: 3px !important;
+                    padding: 10px 0 !important;
+                    font-weight: 700 !important;
+                    color: #94a3b8 !important;
                     font-size: 12px !important;
-                    padding: 3px 8px !important;
+                    border-bottom: 1px solid rgba(51, 65, 85, 0.8) !important;
+                    background: rgba(30, 41, 59, 0.5);
+                }
+                .rbc-day-bg {
+                    background: transparent;
+                    border-left: 1px solid rgba(51, 65, 85, 0.4) !important;
+                }
+                .rbc-day-bg + .rbc-day-bg {
+                    border-left: 1px solid rgba(51, 65, 85, 0.4) !important;
+                }
+                .rbc-month-row {
+                    border-top: 1px solid rgba(51, 65, 85, 0.4) !important;
+                    min-height: 80px !important;
+                }
+                .rbc-today {
+                    background-color: rgba(99, 102, 241, 0.1) !important;
+                }
+                .rbc-off-range-bg {
+                    background: rgba(15, 23, 42, 0.9) !important;
+                }
+                .rbc-date-cell {
+                    padding: 6px 8px !important;
+                    font-size: 12px;
+                    font-weight: 600;
+                    color: #94a3b8;
+                }
+                .rbc-now .rbc-button-link {
+                    color: #818cf8 !important;
+                    font-weight: 800;
+                }
+                .rbc-event {
+                    background-color: rgba(99, 102, 241, 0.2) !important;
+                    color: #c7d2fe !important;
+                    border: 1px solid rgba(99, 102, 241, 0.4) !important;
+                    border-radius: 6px !important;
+                    padding: 2px 6px !important;
+                    font-size: 11px !important;
+                    font-weight: 600 !important;
+                    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+                }
+                .rbc-toolbar button {
+                    color: #94a3b8 !important;
+                    border: 1px solid rgba(51, 65, 85, 0.8) !important;
+                    background: rgba(30, 41, 59, 0.8) !important;
+                    border-radius: 8px !important;
+                    font-size: 12px !important;
+                    font-weight: 600 !important;
+                    padding: 6px 12px !important;
+                    transition: all 0.2s ease;
+                }
+                .rbc-toolbar button:hover {
+                    background: rgba(51, 65, 85, 1) !important;
+                    color: #f8fafc !important;
                 }
                 .rbc-toolbar button:active, .rbc-toolbar button.rbc-active {
-                    background-color: #0052CC !important;
+                    background-color: #4f46e5 !important;
                     color: white !important;
-                    border-color: #0052CC !important;
+                    border-color: #4f46e5 !important;
+                    box-shadow: 0 0 10px rgba(79, 70, 229, 0.4);
                 }
                 .rbc-toolbar-label {
-                    font-size: 14px !important;
-                    font-weight: 600 !important;
+                    font-size: 15px !important;
+                    font-weight: 700 !important;
+                    color: #f1f5f9 !important;
                 }
             `}</style>
 
-            <div className="flex p-2 justify-between items-center border-b border-[#DFE1E6] pb-2 mb-3">
-                <div >
-                    <h1 className="text-base  font-semibold text-[#172B4D]">📅 Calendar View</h1>
+            {/* Header */}
+            <div className="flex items-center justify-between bg-slate-900/80 backdrop-blur-md p-5 rounded-2xl border border-slate-800 shadow-xl">
+                <div className="flex items-center gap-3">
+                    <div className="p-2.5 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400">
+                        <CalendarIcon size={22} />
+                    </div>
+                    <div>
+                        <h2 className="text-xl font-extrabold text-slate-100 tracking-tight">Calendar Schedule</h2>
+                        <p className="text-xs text-slate-400">Track task timelines and deadlines</p>
+                    </div>
                 </div>
-                <div className="bg-[#F4F5F7] border border-[#DFE1E6] rounded px-2 py-0.5 text-[11px] font-medium text-[#42526E]">
-                    <span>{events.length} Tasks</span>
+
+                <div className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-1.5 text-xs font-mono font-semibold text-indigo-300">
+                    <span>{events.length} Scheduled Tasks</span>
                 </div>
             </div>
 
-            <div className="bg-white" style={{ height: "460px" }}>
+            {/* Calendar Container */}
+            <div className="bg-slate-900/80 backdrop-blur-md p-4 sm:p-6 rounded-2xl border border-slate-800 shadow-xl" style={{ height: "550px" }}>
                 <Calendar
                     localizer={localizer}
                     events={events}

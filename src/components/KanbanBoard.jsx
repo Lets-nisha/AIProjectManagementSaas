@@ -1,341 +1,53 @@
 import React, { useState, useEffect } from "react";
-
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import { db } from "../firebase";
-import { doc, getDoc, setDoc, collection, onSnapshot } from "firebase/firestore";
+import { doc, onSnapshot, setDoc, collection } from "firebase/firestore";
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
-
-const KanbanBoard = () => {
+const KanbanBoard = ({ searchQuery = "" }) => {
     const [boardData, setBoardData] = useState({ todo: [], inProgress: [], done: [] });
     const [loading, setLoading] = useState(true);
     const [teamMembers, setTeamMembers] = useState([]);
-    const [newComment, setNewComment] = useState("");
-
-    const [selectedTask, setSelectedTask] = useState(null);
-    const [selectedColumnId, setSelectedColumnId] = useState(null);
-
-    const [editingCommentId, setEditingCommentId] = useState(null);
-    const [editingCommentText, setEditingCommentText] = useState("");
-
-    const [activeInputColumn, setActiveInputColumn] = useState(null);
-    const [newTaskTitle, setNewTaskTitle] = useState("");
 
     useEffect(() => {
-        const fetchBoardData = async () => {
-            try {
-                const docRef = doc(db, "boards", "main-board");
-                const docSnap = await getDoc(docRef);
-
-                if (docSnap.exists() && Object.keys(docSnap.data()).length > 0) {
-                    const data = docSnap.data();
-                    setBoardData({
-                        todo: data.todo || [],
-                        inProgress: data.inProgress || [],
-                        done: data.done || []
-                    });
-                } else {
-                    const initialSetup = {
-                        todo: [
-                            { id: "task-1", title: "Welcome to your Board!" },
-                            { id: "task-2", title: "Testing Firebase Connection" }
-                        ],
-                        inProgress: [],
-                        done: []
-                    };
-
-                    setBoardData(initialSetup);
-
-                    await setDoc(docRef, initialSetup);
-                }
-            } catch (error) {
-                console.error(" error:", error);
+        const docRef = doc(db, "boards", "main-board");
+        const unsubscribeBoard = onSnapshot(docRef, (docSnap) => {
+            if (docSnap.exists() && Object.keys(docSnap.data()).length > 0) {
+                const data = docSnap.data();
                 setBoardData({
-                    todo: [{ id: "error-task", title: "Local Test Card  " }],
-                    inProgress: [],
-                    done: []
+                    todo: data.todo || [],
+                    inProgress: data.inProgress || [],
+                    done: data.done || []
                 });
-            } finally {
-                setLoading(false);
+            } else {
+                const initialSetup = { todo: [], inProgress: [], done: [] };
+                setBoardData(initialSetup);
+                setDoc(docRef, initialSetup);
             }
-        };
+            setLoading(false);
+        });
 
         const unsubscribeTeam = onSnapshot(collection(db, "team"), (snapshot) => {
-            const list = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            const list = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
             setTeamMembers(list);
         });
 
-        fetchBoardData();
-        return () => unsubscribeTeam();
+        return () => {
+            unsubscribeBoard();
+            unsubscribeTeam();
+        };
     }, []);
 
-    // const handleBacklogGenerated = async (aiTasks) => {
-    //     try {
-    //         const formattedTasks = aiTasks.map((task) => ({
-    //             id: `task-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`, // Unique secure ID
-    //             title: task.title,
-    //             assignedTo: task.assignee || "",
-    //             dueDate: "",
-    //             comments: []
-    //         }));
-
-    //         const updatedData = {
-    //             ...boardData,
-    //             todo: [...boardData.todo, ...formattedTasks], // Append generated tasks into current Todo
-    //         };
-
-    //         setBoardData(updatedData);
-
-    //         await setDoc(doc(db, "boards", "main-board"), updatedData);
-
-    //         toast.success("✨ AI Generated Project Plan successfully loaded on your Board!");
-    //     } catch (error) {
-    //         console.error("Error setting AI generated backlog to Firebase: ", error);
-    //         toast.error("Failed to sync AI backlog on cloud DB.");
-    //     }
-    // };
-
-    const handleAddComment = async () => {
-        if (!newComment.trim() || !selectedTask || !selectedColumnId) return;
-
-        const commentObject = {
-            id: `comment-${Date.now()}`,
-            text: newComment.trim(),
-            by: "Current User",
-            createdAt: new Date().toLocaleDateString()
-        };
-
-        const updatedComments = [...(selectedTask.comments || []), commentObject];
-        const updatedColumn = boardData[selectedColumnId].map((task) => {
-            if (task.id === selectedTask.id) {
-                return { ...task, comments: updatedComments };
-            }
-            return task;
-        });
-
-        const updatedData = { ...boardData, [selectedColumnId]: updatedColumn };
-
-        setBoardData(updatedData);
-        setSelectedTask({ ...selectedTask, comments: updatedComments });
-        setNewComment("");
-        toast.success("Add New Comment");
-
-        try {
-            await setDoc(doc(db, "boards", "main-board"), updatedData);
-        } catch (error) {
-            console.error(error);
-        }
-    };
-
-    const handleUpdateComment = async (commentId) => {
-        if (!editingCommentText.trim() || !selectedTask || !selectedColumnId) return;
-
-        const updatedComments = selectedTask.comments.map((comment) => {
-            if (comment.id === commentId) {
-                return { ...comment, text: editingCommentText.trim() };
-            }
-            return comment;
-        });
-
-        const updatedColumn = boardData[selectedColumnId].map((task) => {
-            if (task.id === selectedTask.id) {
-                return { ...task, comments: updatedComments };
-            }
-            return task;
-        });
-
-        const updatedData = { ...boardData, [selectedColumnId]: updatedColumn };
-        setBoardData(updatedData);
-        setSelectedTask({ ...selectedTask, comments: updatedComments });
-        setEditingCommentId(null);
-        setEditingCommentText("");
-        toast.info("Edit comment")
-
-        try {
-            await setDoc(doc(db, "boards", "main-board"), updatedData);
-        } catch (error) {
-            console.error("Error updating comment:", error);
-        }
-    };
-
-    const handleDeleteComment = async (commentId) => {
-        if (!selectedTask || !selectedColumnId) return;
-
-        const confirmDelete = window.confirm("Are you sure delete ths comment?");
-        if (!confirmDelete) return;
-
-        const updatedComments = selectedTask.comments.filter((comment) => comment.id !== commentId);
-
-        const updatedColumn = boardData[selectedColumnId].map((task) => {
-            if (task.id === selectedTask.id) {
-                return { ...task, comments: updatedComments };
-            }
-            return task;
-        });
-
-        const updatedData = { ...boardData, [selectedColumnId]: updatedColumn };
-        setBoardData(updatedData);
-        setSelectedTask({ ...selectedTask, comments: updatedComments });
-        toast.error("Delete comment");
-        try {
-            await setDoc(doc(db, "boards", "main-board"), updatedData);
-        } catch (error) {
-            console.error("Error deleting comment:", error);
-        }
-    };
-
-
-    const handleAddTask = async (columnId) => {
-        if (!newTaskTitle.trim()) return;
-
-        const newTask = {
-            id: `task-${Date.now()}`,
-            title: newTaskTitle.trim(),
-            assignedTo: "",
-            dueDate: "",
-            comments: []
-        };
-
-        const updatedColumn = [...boardData[columnId], newTask];
-        const updatedData = { ...boardData, [columnId]: updatedColumn };
-
-        setBoardData(updatedData);
-        setNewTaskTitle("");
-        setActiveInputColumn(null);
-        toast.success("🚀 Add New Task!");
-
-
-        try {
-            await setDoc(doc(db, "boards", "main-board"), updatedData);
-        } catch (error) {
-            console.error("Error adding new task:", error);
-        }
-    };
-
-    const handleDeleteTask = async (colId, taskId) => {
-        const confirmDelete = window.confirm("Are you sure?");
-        if (!confirmDelete) return;
-
-        const updatedColumn = boardData[colId].filter((task) => task.id !== taskId);
-        const updatedData = { ...boardData, [colId]: updatedColumn };
-
-        setBoardData(updatedData);
-        toast.error("🗑️  delete Task!");
-
-        try {
-            await setDoc(doc(db, "boards", "main-board"), updatedData);
-        } catch (error) {
-            console.error("Error deleting task:", error);
-        }
-    };
-
-    const handleEditTaskTitle = async (colId, taskId) => {
-        const currentTask = boardData[colId].find(t => t.id === taskId);
-        const newTitle = window.prompt("Edit Name:", currentTask?.title);
-
-        if (!newTitle || !newTitle.trim()) return;
-
-        const updatedColumn = boardData[colId].map((task) => {
-            if (task.id === taskId) {
-                return { ...task, title: newTitle.trim() };
-            }
-            return task;
-        });
-
-        const updatedData = { ...boardData, [colId]: updatedColumn };
-        setBoardData(updatedData);
-        toast.info("✏️ change Task Name!");
-
-        try {
-            await setDoc(doc(db, "boards", "main-board"), updatedData);
-        } catch (error) {
-            console.error("Error updating task title:", error);
-        }
-    };
-
-    const renderNewTaskInput = (columnId) => {
-        if (activeInputColumn === columnId) {
-            return (
-                <div className="mt-3 bg-white p-3 rounded shadow border border-indigo-300 space-y-2">
-                    <input
-                        type="text"
-                        value={newTaskTitle}
-                        onChange={(e) => setNewTaskTitle(e.target.value)}
-                        placeholder="What needs to be done?"
-                        className="w-full text-xs border border-slate-300 rounded px-2 py-1.5 focus:outline-none focus:border-indigo-500"
-                        onKeyDown={(e) => e.key === 'Enter' && handleAddTask(columnId)}
-                        autoFocus
-                    />
-                    <div className="flex gap-2 justify-end">
-                        <button
-                            onClick={() => { setActiveInputColumn(null); setNewTaskTitle(""); }}
-                            className="text-[11px] text-slate-500 hover:text-slate-700 px-2 py-1"
-                        >
-                            Cancel
-                        </button>
-                        <button
-                            onClick={() => handleAddTask(columnId)}
-                            className="bg-indigo-600 hover:bg-indigo-700 text-white text-[11px] font-medium px-3 py-1 rounded shadow"
-                        >
-                            Add
-                        </button>
-                    </div>
-                </div>
-            );
-        }
-
-        return (
-            <button
-                onClick={() => setActiveInputColumn(columnId)}
-                className="mt-3 w-full border border-dashed border-slate-300 hover:border-indigo-400 text-slate-500 hover:text-indigo-600 bg-slate-50/50 hover:bg-white text-xs font-medium py-2 rounded-lg transition-all flex items-center justify-center gap-1"
-            >
-                ➕ Add Task
-            </button>
+    // Search Query ke basis par task filter karne ka function
+    const filterTasks = (tasks = []) => {
+        if (!searchQuery || !searchQuery.trim()) return tasks;
+        const query = searchQuery.toLowerCase().trim();
+        return tasks.filter(task =>
+            (task.title && task.title.toLowerCase().includes(query)) ||
+            (task.assignedTo && task.assignedTo.toLowerCase().includes(query))
         );
     };
-
-    const handleAssignMember = async (columnId, taskId, memberName) => {
-        const updatedColumn = boardData[columnId].map((task) => {
-            if (task.id === taskId) {
-                return { ...task, assignedTo: memberName || "" };
-            }
-            return task;
-        });
-
-        const updatedData = { ...boardData, [columnId]: updatedColumn };
-
-        setBoardData(updatedData);
-
-        try {
-            await setDoc(doc(db, "boards", "main-board"), updatedData);
-            console.log("Member assigned successfully! 🚀");
-        } catch (error) {
-            console.error("Error updating assignment:", error);
-        }
-    };
-
-    const handleDateChange = async (columnId, taskId, newDate) => {
-        const updatedColumn = boardData[columnId].map((task) => {
-            if (task.id === taskId) {
-                return { ...task, dueDate: newDate || "" };
-            }
-            return task;
-        });
-
-        const updatedData = { ...boardData, [columnId]: updatedColumn };
-
-        setBoardData(updatedData);
-
-        try {
-            await setDoc(doc(db, "boards", "main-board"), updatedData);
-            console.log("Due date updated in Firebase! 📅");
-        } catch (error) {
-            console.error("Error updating date:", error);
-        }
-    };
-
-
 
     const handleDragEnd = async (result) => {
         const { source, destination } = result;
@@ -343,26 +55,16 @@ const KanbanBoard = () => {
         if (source.droppableId === destination.droppableId && source.index === destination.index) return;
 
         let updatedData = { ...boardData };
-
-
         if (source.droppableId === destination.droppableId) {
-            const currentColumn = Array.from(boardData[source.droppableId]);
-
+            const currentColumn = Array.from(boardData[source.droppableId] || []);
             const [removedTask] = currentColumn.splice(source.index, 1);
             currentColumn.splice(destination.index, 0, removedTask);
-
-            updatedData = {
-                ...boardData,
-                [source.droppableId]: currentColumn
-            };
+            updatedData = { ...boardData, [source.droppableId]: currentColumn };
         } else {
-
-            const startColumn = Array.from(boardData[source.droppableId]);
+            const startColumn = Array.from(boardData[source.droppableId] || []);
             const [movedTask] = startColumn.splice(source.index, 1);
-
-            const finishColumn = Array.from(boardData[destination.droppableId]);
+            const finishColumn = Array.from(boardData[destination.droppableId] || []);
             finishColumn.splice(destination.index, 0, movedTask);
-
             updatedData = {
                 ...boardData,
                 [source.droppableId]: startColumn,
@@ -370,340 +72,122 @@ const KanbanBoard = () => {
             };
         }
         setBoardData(updatedData);
-
-        try {
-            await setDoc(doc(db, "boards", "main-board"), updatedData);
-            console.log("Save data properly in Firebase ! 🚀");
-        } catch (error) {
-            console.error("Error conn`t save data in Firebase:", error);
-        }
+        await setDoc(doc(db, "boards", "main-board"), updatedData);
     };
-    const renderTaskControls = (columnId, task) => (
-        <div className="mt-3 pt-2 border-t border-slate-200 space-y-2"
-            onClick={(e) => e.stopPropagation()}
-        >
 
-            <div className="flex items-center justify-between">
-                <span className="text-[10px] text-slate-500 font-semibold uppercase tracking-wider">Assignee:</span>
-                <select
-                    value={task.assignedTo || ""}
-                    onChange={(e) => handleAssignMember(columnId, task.id, e.target.value)}
-                    className="text-xs bg-slate-50 border border-slate-300 rounded px-1 py-0.5 text-slate-700 focus:outline-none max-w-[120px] cursor-pointer"
-                >
-                    <option value="">Unassigned</option>
-                    {teamMembers.map((member) => (
-                        <option key={member.id} value={member.name}>
-                            {member.name}
-                        </option>
-                    ))}
-                </select>
-            </div>
+    const handleAssignMember = async (columnId, taskId, memberName) => {
+        const updatedColumn = (boardData[columnId] || []).map((t) => t.id === taskId ? { ...t, assignedTo: memberName || "" } : t);
+        const updatedData = { ...boardData, [columnId]: updatedColumn };
+        setBoardData(updatedData);
+        await setDoc(doc(db, "boards", "main-board"), updatedData);
+    };
 
-            <div className="flex items-center justify-between mt-1">
-                <span className="text-[10px] text-slate-500 font-semibold uppercase tracking-wider">Due Date:</span>
-                <input
-                    type="date"
-                    value={task.dueDate ? task.dueDate.substring(0, 10) : ""}
-                    onChange={(e) => {
-                        const selectedDate = e.target.value;
-                        if (selectedDate) {
-                            handleDateChange(columnId, task.id, selectedDate);
-                        }
-                    }}
-                    className="text-xs bg-slate-50 border border-slate-300 rounded px-1 py-0.5 text-slate-700 focus:outline-none cursor-pointer"
-                />
-            </div>
+    const handleDateChange = async (columnId, taskId, newDate) => {
+        const updatedColumn = (boardData[columnId] || []).map((t) => t.id === taskId ? { ...t, dueDate: newDate || "" } : t);
+        const updatedData = { ...boardData, [columnId]: updatedColumn };
+        setBoardData(updatedData);
+        await setDoc(doc(db, "boards", "main-board"), updatedData);
+    };
 
-        </div>
+    const handleDeleteTask = async (colId, taskId, e) => {
+        e.stopPropagation();
+        if (!window.confirm("Delete this task?")) return;
+        const updatedColumn = (boardData[colId] || []).filter((t) => t.id !== taskId);
+        const updatedData = { ...boardData, [colId]: updatedColumn };
+        setBoardData(updatedData);
+        await setDoc(doc(db, "boards", "main-board"), updatedData);
+        toast.error("Task deleted");
+    };
 
-    );
+    const columns = [
+        { id: "todo", title: "To Do", bg: "bg-slate-900/90", border: "border-indigo-500/30", badge: "bg-indigo-500/20 text-indigo-300" },
+        { id: "inProgress", title: "In Progress", bg: "bg-slate-900/90", border: "border-amber-500/30", badge: "bg-amber-500/20 text-amber-300" },
+        { id: "done", title: "Completed", bg: "bg-slate-900/90", border: "border-emerald-500/30", badge: "bg-emerald-500/20 text-emerald-300" }
+    ];
 
-    if (loading) {
-        return <div className="p-4 text-slate-500 text-center mt-12">Loading...</div>;
-    }
+    if (loading) return <div className="text-center text-slate-400 py-12">Loading Kanban Board...</div>;
 
     return (
-        <>
-
-
+        <div className="p-2 md:p-4 bg-slate-950 w-full min-h-screen text-slate-100 overflow-hidden">
             <DragDropContext onDragEnd={handleDragEnd}>
-                <div className="flex gap-6 p-4 flex-wrap justify-center md:justify-start">
-
-                    {renderNewTaskInput("todo")}
-                    <Droppable droppableId="todo">
-                        {(provided) => (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 w-full">
+                    {columns.map((col) => {
+                        const filteredColumnTasks = filterTasks(boardData[col.id]);
+                        return (
                             <div
-                                ref={provided.innerRef}
-                                {...provided.droppableProps}
-                                className="bg-slate-100 p-4 rounded-lg w-64 min-h-[300px]"
+                                key={col.id}
+                                className={`w-full ${col.bg} border ${col.border} p-4 rounded-2xl flex flex-col h-[78vh] min-h-[500px] shadow-2xl`}
                             >
-                                <h3 className="font-bold mb-4 text-slate-700">To Do</h3>
+                                <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-800">
+                                    <h3 className="font-bold text-sm tracking-wide text-slate-200">{col.title}</h3>
+                                    <span className={`text-xs px-2.5 py-0.5 rounded-full font-semibold ${col.badge}`}>
+                                        {filteredColumnTasks.length}
+                                    </span>
+                                </div>
 
-                                {boardData.todo.map((task, index) => (
-                                    <Draggable key={task.id} draggableId={task.id} index={index}>
-                                        {(provided) => (
-                                            <div
-                                                ref={provided.innerRef}
-                                                {...provided.draggableProps}
-                                                {...provided.dragHandleProps}
-                                                onClick={() => {
-                                                    setSelectedTask(task); setSelectedColumnId("todo");
-
-                                                }}
-                                                className="bg-white p-3 rounded shadow mb-2 border border-slate-400 cursor-grab flex flex-col justify-between"
-                                            >
-                                                <div className="flex justify-between items-start gap-2">
-                                                    <div className="text-slate-800 font-medium text-xs flex-1">{task.title}</div>
-                                                    <div className="flex gap-1.5 opacity-60 hover:opacity-100" onClick={(e) => e.stopPropagation()}>
-                                                        <button
-                                                            onClick={() => handleEditTaskTitle("todo", task.id)}
-                                                            className="text-slate-400 hover:text-indigo-600 text-[11px]"
-                                                            title="Edit Title"
+                                <Droppable droppableId={col.id}>
+                                    {(provided, snapshot) => (
+                                        <div
+                                            ref={provided.innerRef}
+                                            {...provided.droppableProps}
+                                            className={`flex-1 overflow-y-auto space-y-3 pr-1 rounded-xl transition-colors ${snapshot.isDraggingOver ? 'bg-slate-800/40 ring-2 ring-indigo-500/40' : ''}`}
+                                        >
+                                            {filteredColumnTasks.map((task, index) => (
+                                                <Draggable key={task.id} draggableId={task.id} index={index}>
+                                                    {(provided, snapshot) => (
+                                                        <div
+                                                            ref={provided.innerRef}
+                                                            {...provided.draggableProps}
+                                                            {...provided.dragHandleProps}
+                                                            className={`bg-slate-950 border border-slate-800 hover:border-indigo-500/50 p-3.5 rounded-xl shadow-md transition-all duration-150 ${snapshot.isDragging ? 'rotate-1 scale-105 border-indigo-500 shadow-2xl bg-slate-900' : ''}`}
                                                         >
-                                                            ✏️
-                                                        </button>
-                                                        <button
-                                                            onClick={() => handleDeleteTask("todo", task.id)}
-                                                            className="text-slate-400 hover:text-rose-600 text-[11px]"
-                                                            title="Delete Task"
-                                                        >
-                                                            🗑️
-                                                        </button>
-                                                    </div>
-                                                </div>
+                                                            <div className="flex items-start justify-between gap-2 mb-2">
+                                                                <span className="text-xs font-medium text-slate-300 leading-relaxed flex-1">
+                                                                    {task.title}
+                                                                </span>
+                                                                <button
+                                                                    onClick={(e) => handleDeleteTask(col.id, task.id, e)}
+                                                                    className="text-slate-500 hover:text-rose-400 text-xs p-1"
+                                                                >
+                                                                    ✕
+                                                                </button>
+                                                            </div>
 
-                                                {renderTaskControls("todo", task)}
-                                            </div>
-                                        )}
+                                                            <div className="flex items-center justify-between text-[11px] pt-2.5 border-t border-slate-800/60 text-slate-400" onClick={(e) => e.stopPropagation()}>
+                                                                <select
+                                                                    value={task.assignedTo || ""}
+                                                                    onChange={(e) => handleAssignMember(col.id, task.id, e.target.value)}
+                                                                    className="bg-slate-900 border border-slate-800 rounded px-2 py-0.5 text-slate-300 focus:outline-none focus:border-indigo-500 cursor-pointer text-[11px]"
+                                                                >
+                                                                    <option value="">Unassigned</option>
+                                                                    {teamMembers.map((m) => (
+                                                                        <option key={m.id} value={m.name}>{m.name}</option>
+                                                                    ))}
+                                                                </select>
 
-                                    </Draggable>
-                                ))}
-                                {provided.placeholder}
-
+                                                                <input
+                                                                    type="date"
+                                                                    value={task.dueDate ? task.dueDate.substring(0, 10) : ""}
+                                                                    onChange={(e) => handleDateChange(col.id, task.id, e.target.value)}
+                                                                    className="bg-slate-900 border border-slate-800 rounded px-1.5 py-0.5 text-slate-300 focus:outline-none focus:border-indigo-500 cursor-pointer text-[10px]"
+                                                                />
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                </Draggable>
+                                            ))}
+                                            {provided.placeholder}
+                                        </div>
+                                    )}
+                                </Droppable>
                             </div>
-                        )}
-                    </Droppable>
-                    {renderNewTaskInput("inProgress")}
-
-                    <Droppable droppableId="inProgress">
-                        {(provided) => (
-                            <div
-                                ref={provided.innerRef}
-                                {...provided.droppableProps}
-                                className="bg-orange-100 p-4 rounded-lg w-64 min-h-[300px]"
-                            >
-                                <h3 className="font-bold mb-4 text-orange-700">In Progress</h3>
-                                {boardData.inProgress.map((task, index) => (
-                                    <Draggable key={task.id} draggableId={task.id} index={index}>
-                                        {(provided) => (
-                                            <div
-                                                ref={provided.innerRef}
-                                                {...provided.draggableProps}
-                                                {...provided.dragHandleProps}
-                                                onClick={() => { setSelectedTask(task); setSelectedColumnId("inProgress"); }}
-                                                className="bg-white p-3 rounded shadow mb-2 border border-slate-400 cursor-grab flex flex-col justify-between"
-                                            >
-                                                <div className="flex justify-between items-start gap-2">
-                                                    <div className="text-slate-800 font-medium text-xs flex-1">{task.title}</div>
-                                                    <div className="flex gap-1.5 opacity-60 hover:opacity-100" onClick={(e) => e.stopPropagation()}>
-                                                        <button
-                                                            onClick={() => handleEditTaskTitle("inProgress", task.id)}
-                                                            className="text-slate-400 hover:text-indigo-600 text-[11px]"
-                                                            title="Edit Title"
-                                                        >
-                                                            ✏️
-                                                        </button>
-                                                        <button
-                                                            onClick={() => handleDeleteTask("inProgress", task.id)}
-                                                            className="text-slate-400 hover:text-rose-600 text-[11px]"
-                                                            title="Delete Task"
-                                                        >
-                                                            🗑️
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                                {renderTaskControls("inProgress", task)}
-                                            </div>
-                                        )}
-                                    </Draggable>
-                                ))}
-
-                                {provided.placeholder}
-                            </div>
-                        )}
-                    </Droppable>
-                    {renderNewTaskInput("done")}
-
-
-                    <Droppable droppableId="done">
-                        {(provided) => (
-                            <div
-                                ref={provided.innerRef}
-                                {...provided.droppableProps}
-                                className="bg-green-100 p-4 rounded-lg w-64 min-h-[300px]"
-                            >
-                                <h3 className="font-bold mb-4 text-green-700">Done</h3>
-
-                                {boardData.done.map((task, index) => (
-                                    <Draggable key={task.id} draggableId={task.id} index={index}>
-                                        {(provided) => (
-                                            <div
-                                                ref={provided.innerRef}
-                                                {...provided.draggableProps}
-                                                {...provided.dragHandleProps}
-                                                onClick={() => { setSelectedTask(task); setSelectedColumnId("done"); }}
-                                                className="bg-green p-3 rounded shadow mb-2 border  border-slate-400 cursor-grab flex flex-col justify-between"
-                                            >
-                                                <div className="flex justify-between items-start gap-2">
-                                                    <div className="text-slate-800 font-medium text-xs flex-1">{task.title}</div>
-                                                    <div className="flex gap-1.5 opacity-60 hover:opacity-100" onClick={(e) => e.stopPropagation()}>
-                                                        <button
-                                                            onClick={() => handleEditTaskTitle("done", task.id)}
-                                                            className="text-slate-400 hover:text-indigo-600 text-[11px]"
-                                                            title="Edit Title"
-                                                        >
-                                                            ✏️
-                                                        </button>
-                                                        <button
-                                                            onClick={() => handleDeleteTask("done", task.id)}
-                                                            className="text-slate-400 hover:text-rose-600 text-[11px]"
-                                                            title="Delete Task"
-                                                        >
-                                                            🗑️
-                                                        </button>
-                                                    </div>
-                                                </div> <div className="text-slate-800 font-medium">{task.title}</div>
-                                                {renderTaskControls("done", task)}
-                                            </div>
-                                        )}
-                                    </Draggable>
-                                ))}
-
-                                {provided.placeholder}
-                            </div>
-                        )}
-                    </Droppable>
-
+                        );
+                    })}
                 </div>
             </DragDropContext>
+            <ToastContainer position="bottom-right" theme="dark" />
+        </div>
+    );
+};
 
-
-            {selectedTask && (
-                <div
-                    className="fixed top-0 left-0 right-0 bottom-0 w-full h-full min-h-screen bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[999999] !mt-0 p-4"
-                    onClick={() => { setSelectedTask(null); setSelectedColumnId(null); }}
-                >
-                    <div
-                        className="bg-white rounded-xl shadow-2xl border border-slate-200 w-full max-w-lg overflow-hidden flex flex-col max-h-[85vh] !mt-0"
-                        onClick={(e) => e.stopPropagation()}
-                    >
-                        <div className="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
-                            <h4 className="font-semibold text-slate-800 text-sm truncate max-w-[80%]">
-                                {selectedTask.title}
-                            </h4>
-                            <button
-                                onClick={() => { setSelectedTask(null); setSelectedColumnId(null); }}
-                                className="text-slate-400 hover:text-slate-600 font-bold text-sm px-2 py-1"
-                            >
-                                ✕
-                            </button>
-                        </div>
-
-                        <div className="p-4 overflow-y-auto space-y-4 flex-1">
-                            <div>
-                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Task Context</span>
-                                <p className="text-xs text-slate-600 bg-slate-50 p-2.5 rounded-lg border border-slate-100 leading-relaxed">
-                                    Assigned To: <strong className="text-slate-800">{selectedTask.assignedTo || "Unassigned"}</strong> <br />
-                                    Due Date: <strong className="text-slate-800">{selectedTask.dueDate || "No deadline"}</strong>
-                                </p>
-                            </div>
-
-                            <div>
-                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-2">
-                                    Activity Timeline ({selectedTask.comments?.length || 0})
-                                </span>
-                                <div className="space-y-2">
-                                    {selectedTask.comments && selectedTask.comments.length > 0 ? (
-                                        selectedTask.comments.map((comment) => (
-                                            <div key={comment.id} className="bg-slate-50/60 p-2.5 rounded-lg border border-slate-100 text-xs">
-                                                <div className="flex justify-between items-center mb-1">
-                                                    <span className="font-semibold text-slate-700">{comment.by}</span>
-                                                    <div className="flex items-center gap-2">
-                                                        <span className="text-[10px] text-slate-400">{comment.createdAt}</span>
-                                                        <button
-                                                            onClick={() => { setEditingCommentId(comment.id); setEditingCommentText(comment.text); }}
-                                                            className="text-slate-400 hover:text-indigo-600 text-[11px]"
-                                                            title="Edit Comment"
-                                                        >
-                                                            ✏️
-                                                        </button>
-                                                        <button
-                                                            onClick={() => handleDeleteComment(comment.id)}
-                                                            className="text-slate-400 hover:text-rose-600 text-[11px]"
-                                                            title="Delete Comment"
-                                                        >
-                                                            🗑️
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                                {editingCommentId === comment.id ? (
-                                                    <div className="mt-1 flex gap-2 items-center">
-                                                        <input
-                                                            type="text"
-                                                            value={editingCommentText}
-                                                            onChange={(e) => setEditingCommentText(e.target.value)}
-                                                            className="flex-1 text-xs border border-slate-300 rounded px-2 py-1 bg-white focus:outline-none focus:border-indigo-500"
-                                                        />
-                                                        <button
-                                                            onClick={() => handleUpdateComment(comment.id)}
-                                                            className="bg-indigo-600 text-white text-[10px] px-2 py-1 rounded font-medium"
-                                                        >
-                                                            Update
-                                                        </button>
-                                                        <button
-                                                            onClick={() => { setEditingCommentId(null); setEditingCommentText(""); }}
-                                                            className="text-slate-500 text-[10px] px-1"
-                                                        >
-                                                            Cancel
-                                                        </button>
-                                                    </div>
-                                                ) : (
-                                                    <p className="text-slate-600 whitespace-pre-wrap">{comment.text}</p>
-                                                )}
-                                            </div>
-                                        ))
-                                    ) : (
-                                        <p className="text-xs text-slate-400 italic">No activity yet. Type below to drop updates.</p>
-                                    )}
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="p-3 bg-slate-50 border-t border-slate-100 flex gap-2 items-center">
-                            <input
-                                type="text"
-                                value={newComment}
-                                onChange={(e) => setNewComment(e.target.value)}
-                                placeholder="Add a comment to this issue..."
-                                className="flex-1 text-xs border border-slate-300 rounded-lg px-3 py-2 bg-white focus:outline-none focus:border-indigo-500"
-                                onKeyDown={(e) => e.key === 'Enter' && handleAddComment()}
-                            />
-                            <button
-                                onClick={handleAddComment}
-                                className="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-medium px-4 py-2 rounded-lg transition-all"
-                            >
-                                Save
-                            </button>
-                        </div>
-                    </div>
-                    <ToastContainer position="bottom-right" autoClose={3000} theme="light" />
-                </div>
-            )}
-
-
-
-        </>
-    )
-}
-
-export default KanbanBoard
+export default KanbanBoard;

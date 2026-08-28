@@ -1,45 +1,55 @@
-const OPENROUTER_API_KEY = import.meta.env.VITE_OPENROUTER_API_KEY;
+// src/utils/gemini.js
 
-export const generateProjectBacklog = async (projectIdea) => {
+const DEEPSEEK_API_KEY = import.meta.env.VITE_DEEPSEEK_API_KEY;
+
+export const generateProjectBacklog = async (projectIdea, existingTasks = null) => {
     try {
-        if (!OPENROUTER_API_KEY) {
-            throw new Error("VITE_OPENROUTER_API_KEY is missing from your .env file!");
+        if (!DEEPSEEK_API_KEY) {
+            throw new Error("VITE_DEEPSEEK_API_KEY is missing in your .env file!");
         }
 
-        const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+        const isEditing = Boolean(existingTasks);
+
+        const systemPrompt = `You are an expert Agile Product Manager and Systems Architect.
+Analyze the user's project request and provide a detailed, structured implementation approach broken down into clear developer tasks across phases (e.g., Phase 1: Setup, Phase 2: Core Features, Phase 3: Testing & Polish).
+
+CRITICAL INSTRUCTIONS:
+- You must output ONLY a raw JSON array of task objects.
+- Do NOT wrap in markdown code blocks (do not wrap in \`\`\`json).
+- Each object must strictly follow this structure:
+  {
+    "code": "PROJ-101",
+    "title": "[Phase X: Name] Short task title",
+    "status": "todo" or "progress",
+    "priority": "high", "medium", or "low",
+    "assignee": "Two-letter initials (e.g., AK, NS)"
+  }
+
+${isEditing ? `EXISTING TASKS TO EDIT/UPDATE: ${JSON.stringify(existingTasks)}` : ''}`;
+
+        const response = await fetch("https://api.deepseek.com/chat/completions", {
             method: "POST",
             headers: {
-                "Authorization": `Bearer ${OPENROUTER_API_KEY}`,
-                "HTTP-Referer": window.location.origin,
-                "X-Title": "Kanban Flow AI",
+                "Authorization": `Bearer ${DEEPSEEK_API_KEY}`,
                 "Content-Type": "application/json"
             },
             body: JSON.stringify({
-                model: "openrouter/free",
+                model: "deepseek-chat",
                 messages: [
-                    {
-                        role: "system",
-                        content: `You are an expert agile product manager. Analyze the user's project idea and return a clean, structured backlog of exactly 5 core developer tasks. 
-            
-            You must output ONLY a raw JSON array. No conversational text, no markdown code blocks (do not wrap in \`\`\`json).
-            
-            Each object in the array must strictly have:
-            - "code": Unique ID starting with "PROJ-" (e.g., "PROJ-101")
-            - "title": Concise actionable developer title
-            - "status": Must be either "todo" or "progress"
-            - "priority": Must be "high", "medium", or "low"
-            - "assignee": Random 2-letter initials (e.g., "AK")`
-                    },
+                    { role: "system", content: systemPrompt },
                     {
                         role: "user",
-                        content: `Project Idea: "${projectIdea}"`
+                        content: isEditing
+                            ? `Update/Refine the existing tasks based on this prompt: "${projectIdea}"`
+                            : `Project Idea and Requirements: "${projectIdea}"`
                     }
-                ]
+                ],
+                temperature: 0.7
             })
         });
 
         if (!response.ok) {
-            throw new Error(`OpenRouter API responded with status ${response.status}`);
+            throw new Error(`DeepSeek API responded with status ${response.status}`);
         }
 
         const data = await response.json();
@@ -52,7 +62,7 @@ export const generateProjectBacklog = async (projectIdea) => {
         return JSON.parse(contentText);
 
     } catch (error) {
-        console.error("OpenRouter API Error:", error);
-        throw new Error(error.message || "Failed to construct backlog.");
+        console.error("DeepSeek API Error:", error);
+        throw new Error(error.message || "Failed to generate backlog from DeepSeek.");
     }
 };

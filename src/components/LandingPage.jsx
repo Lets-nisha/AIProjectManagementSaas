@@ -105,7 +105,7 @@ export default function LandingPage() {
                         <div className="bg-slate-900/40 border border-slate-800/80 hover:border-blue-500/30 p-8 rounded-2xl text-left transition duration-300 group">
                             <div className="w-12 h-12 rounded-xl bg-blue-500/10 text-blue-400 flex items-center justify-center text-xl font-bold mb-6 group-hover:scale-110 transition-transform">
                                 📋
-                            </div>
+                            </div>z
                             <h4 className="text-xl font-bold text-white mb-3">Interactive Backlogs</h4>
                             <p className="text-slate-400 leading-relaxed mb-4">
                                 Plan user stories, build them out in epics, and organize your sprint backlogs with absolutely zero manual effort or configuration overhead.

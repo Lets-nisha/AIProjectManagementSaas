@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Sparkles } from 'lucide-react';
+import { Sparkles, Loader2, Plus, ArrowUp } from 'lucide-react';
 
 const PromptBox = ({ onGenerate }) => {
   const [prompt, setPrompt] = useState('');
@@ -21,45 +21,34 @@ const PromptBox = ({ onGenerate }) => {
   };
 
   return (
-    <div className="bg-slate-900 rounded-xl p-6 shadow-xl border border-slate-800 text-white">
-      <div className="flex items-center gap-2 mb-3">
-        <Sparkles className="text-indigo-400" size={20} />
-        <h2 className="text-sm font-semibold uppercase tracking-wider text-slate-400">AI Project Planner</h2>
-      </div>
+    <form onSubmit={handleSubmit} className="w-full max-w-3xl mx-auto">
+      <div className="relative flex items-center bg-slate-900 border border-slate-800 hover:border-slate-700 focus-within:border-indigo-500/80 rounded-full px-4 py-2.5 shadow-xl transition-all duration-200">
 
-      <p className="text-xs text-slate-400 mb-4">
-        Write your project idea in Hinglish, Hindi, or English. The AI will automatically create tasks for you.
-      </p>
-
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <textarea
+        <input
+          type="text"
           value={prompt}
           onChange={(e) => setPrompt(e.target.value)}
-          placeholder="Write your project idea here... (e.g., Build a simple login page using React)"
+          placeholder=" AI Project Planner..."
           disabled={loading}
-          className="w-full h-28 bg-slate-950 text-slate-100 rounded-lg p-4 border border-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 placeholder-slate-600 resize-none text-sm leading-relaxed"
+          className="w-full bg-transparent text-slate-100 placeholder-slate-500 text-sm px-3 focus:outline-none disabled:opacity-50"
         />
 
-        <div className="flex justify-end">
+        <div className="flex items-center gap-2 flex-shrink-0">
           <button
             type="submit"
             disabled={loading || !prompt.trim()}
-            className="bg-indigo-600 hover:bg-indigo-500 disabled:bg-indigo-800 text-white font-medium text-sm px-5 py-2.5 rounded-lg shadow-lg shadow-indigo-600/20 transition-all flex items-center gap-2 active:scale-95"
+            className="p-2 rounded-full bg-indigo-600 hover:bg-indigo-500 disabled:bg-slate-800 disabled:text-slate-600 text-white transition-all shadow-md active:scale-95 flex items-center justify-center"
           >
             {loading ? (
-              <>
-                <span className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></span>
-                Generating...
-              </>
+              <Loader2 size={16} className="animate-spin text-white" />
             ) : (
-              <>
-                <Sparkles size={16} /> Generate Project Plan
-              </>
+              <ArrowUp size={16} />
             )}
           </button>
         </div>
-      </form>
-    </div>
+
+      </div>
+    </form>
   );
 };
 
